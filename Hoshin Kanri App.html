@@ -510,19 +510,25 @@ body::after{
           </div><!-- /rotator-wrap -->
 
           <!-- WHO PANEL — hermano del rotator-wrap, NO gira -->
-          <div class="who-panel" id="who-panel">
+          <div class="who-panel" id="who-panel" style="position:relative;">
+
+          <!-- Botón anclado arriba-derecha, independiente del contenido -->
+          <button class="ctrl-btn" id="expand-btn-who" onclick="expandWho()"
+            style="position:absolute; top:8px; right:8px; z-index:20;">⤢</button>
+
             <div class="who-header">
-              <div style="display:flex;align-items:center;justify-content:space-between;padding-right:5px;">
-                <div class="arm-head h4" onclick="setView('focus',4)" style="padding:6px 6px 4px;">
-                  <span class="qnum" style="background:var(--p4fill);color:#1a0503;">5</span>
-                  <span id="hn4">Who · Responsables</span>
-                </div>
-                <button class="ctrl-btn" id="expand-btn-who" onclick="expandWho()"
-                  style="opacity:1;position:static;width:20px;height:20px;font-size:10px;">⤢</button>
+            <!-- ya sin el botón aquí -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding-right:5px;">
+              <div class="arm-head h4" onclick="setView('focus',4)" style="padding:6px 6px 4px;">
+              <span class="qnum" style="background:var(--p4fill);color:#1a0503;">5</span>
+              <span id="hn4">Who · Responsables</span>
               </div>
-              <div class="who-stats" id="who-stats"></div>
             </div>
+              <div class="who-stats" id="who-stats"></div>
+              </div>
+
             <div class="arm-scroll" id="qb-4"></div>
+
           </div><!-- /who-panel -->
 
         </div><!-- /matrix-row -->
