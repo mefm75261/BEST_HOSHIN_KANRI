@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoshin Kanri X-Matrix</title>
+<link rel="icon" type="image/png" href="img/icon_hk.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --glass:rgba(255,255,255,0.13);
+  --glass-border:rgba(255,255,255,0.22);
+  --surface2:rgba(255,255,255,0.16);
+  --text:#fff;
+  --muted:rgba(255,255,255,0.65);
+  --hint:rgba(255,255,255,0.38);
+  --radius:12px;
+  --rad-lg:18px;
+  --p0c:#4fc3f7; --p0bg:rgba(197,236,252,0.16); --p0bd:rgba(79,195,247,0.5); --p0fill:#29b6f6;
+  --p1c:#ffd54f; --p1bg:rgba(255,213,79,0.16); --p1bd:rgba(255,213,79,0.5); --p1fill:#ffca28;
+  --p2c:#66bb6a; --p2bg:rgba(102,187,106,0.16); --p2bd:rgba(102,187,106,0.5); --p2fill:#43a047;
+  --p3c:#ef5350; --p3bg:rgba(239,83,80,0.16); --p3bd:rgba(239,83,80,0.5); --p3fill:#e53935;
+  --p4c:#b0bec5; --p4bg:rgba(240,245,250,0.12); --p4bd:rgba(176,190,197,0.5); --p4fill:#90a4ae;
+}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  min-height:100vh;
+  background:#1C1C1C;
+  color:var(--text);
+  position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 60% 60%,rgba(0,0,0,0.55) 0%,transparent 60%),
+    radial-gradient(ellipse at 40% 100%,rgba(0,0,0,0.7) 0%,transparent 60%),
+    linear-gradient(160deg,#1C1C1C 0%,#1C1C1C 100%);
+  pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;inset:0;z-index:1;
+  background:url('img/FondoHK.jpg') center/cover no-repeat;
+  opacity:0.08;pointer-events:none;
+}
+
+/* ── SHELL ── */
+.shell{
+  position:relative;z-index:2;
+  display:grid;
+  grid-template-columns:minmax(490px,300px) 1fr;
+  gap:2rem;
+  padding:2rem 1rem;
+  height:100vh;          /* exactamente el viewport, sin scroll */
+  overflow:hidden;
+  align-items:stretch;
+}
+.aside{
+  overflow-y:auto;
+  overflow-x:hidden;
+  display:flex;flex-direction:column;gap:.7rem;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,0.15) transparent;
+}
+.main{min-width:0;display:flex;flex-direction:column;overflow:hidden;}
+
+/* HERO */
+.hero{text-align:left;}
+.hero-eyebrow{font-size:20px;letter-spacing:.25em;text-transform:uppercase;color:rgba(114, 120, 117);margin-bottom:.25rem;}
+.hero-title{
+  font-size:clamp(4rem,2.3vw,9.0rem);font-weight:900;letter-spacing:-.02em;line-height:1.02;
+  background:linear-gradient(135deg,#fff 30%,#585e5e 70%,#585e5e 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.25rem;
+}
+.hero-sub{font-size:15px;color:rgba(232,235,234,0.6);letter-spacing:.05em;}
+.hero-line{width:44px;height:3px;margin:.5rem 0 0;background:linear-gradient(90deg,rgba(232,235,234,0.8),transparent);border-radius:2px;}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.btn{
+  display:inline-flex;align-items:center;gap:5px;font-size:22px;font-weight:600;padding:6px 25px;
+  border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text);
+  cursor:pointer;transition:background .15s,border-color .15s;font-family:inherit;white-space:nowrap;backdrop-filter:blur(6px);
+}
+.btn:hover{background:var(--surface2);}
+.btn.active{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.5);}
+.btn.accent{background:linear-gradient(135deg,rgba(232,235,234,0.6),rgba(174,176,176,0.6));border-color:rgba(250,250,250,0.5);}
+.btn.accent:hover{background:linear-gradient(135deg,rgba(250,250,250,0.7),rgba(171,169,169,0.7));}
+.toolbar-group{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.tb-label{font-size:20px;letter-spacing:.12em;text-transform:uppercase;color:var(--text);width:100%;margin-bottom:-2px;}
+.rot-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:10px;background:rgba(0,0,0,0.3);font-size:10px;font-weight:700;padding:0 4px;margin-left:3px;}
+
+/* ── MATRIX LAYOUT ──
+   El tamaño del cuadrado lo calcula JS (sizeMatrix) para ser robusto.
+   matrix-section centra la fila vertical y horizontalmente.
+*/
+.matrix-section{
+  flex:1 1 0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:.3rem;
+  overflow:hidden;
+}
+
+/* matrix-row: fila centrada con el cuadrado + who-panel */
+.matrix-row{
+  display:flex;
+  flex-direction:row;
+  gap:6px;
+  align-items:flex-start;  /* permite que el margin-top del who-panel lo alinee con el brazo central */
+  /* width y height los fija JS via sizeMatrix() */
+}
+
+/* rotator-wrap: cuadrado (lado fijado por JS) */
+.rotator-wrap{
+  flex:0 0 auto;
+  position:relative;
+  overflow:hidden;
+  /* width y height fijados por JS */
+}
+
+.rotator{
+  width:100%;height:100%;
+  transform-origin:center center;
+  will-change:transform;
+}
+
+.cross{
+  display:grid;
+  grid-template-columns:1fr 1.15fr 1fr;
+  grid-template-rows:1fr 1.15fr 1fr;
+  gap:6px;
+  width:100%;height:100%;
+  will-change:transform;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+
+/* WHO PANEL — mismo alto que el cuadrado, ancho = brazo lateral (fijado por JS) */
+.who-panel{
+  flex:0 0 auto;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  border-radius:14px;
+  background:var(--p4bg);
+  border:1px solid var(--p4bd);
+  backdrop-filter:blur(8px);
+  /* width y height fijados por JS */
+}
+.who-header{
+  padding:4px 8px 0;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  flex-shrink:0;
+}
+.who-stats{font-size:9px;color:var(--muted);padding:2px 9px 4px;letter-spacing:.03em;}
+
+/* ARMS */
+.arm{
+  border-radius:14px;border:1px solid;background:var(--glass);backdrop-filter:blur(8px);
+  display:flex;flex-direction:column;overflow:hidden;position:relative;
+  will-change:transform;transform:translateZ(0);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+}
+.cell{position:relative;display:flex;}
+.cell .arm{flex:1;min-width:0;min-height:0;}
+.pos-top  {grid-column:2;grid-row:1;}
+.pos-left {grid-column:1;grid-row:2;}
+.pos-right{grid-column:3;grid-row:2;}
+.pos-bot  {grid-column:2;grid-row:3;}
+
+.cell-controls{
+  position:absolute;top:0px;right:0px;z-index:30;
+  display:flex;gap:4px;align-items:center;
+  opacity:0;transition:opacity .15s;pointer-events:none;
+}
+.cell:hover .cell-controls{opacity:1;pointer-events:auto;}
+
+.ctrl-btn{
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(38,38,38,0.92);border:1.5px solid rgba(255,255,255,0.3);
+  color:rgba(255,255,255,0.75);font-size:11px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,border-color .15s,color .15s;
+  font-family:inherit;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,0.5);
+}
+.ctrl-btn:hover{background:rgba(245,245,245,0.25);border-color:rgba(245,245,245,0.7);color:#fff;}
+.ctrl-btn.active{background:rgba(245,245,245,0.2);border-color:rgba(245,245,245,0.6);color:rgba(245,245,245,1);}
+
+.a0{border-color:var(--p0bd);background:var(--p0bg);}
+.a1{border-color:var(--p1bd);background:var(--p1bg);}
+.a2{border-color:var(--p2bd);background:var(--p2bg);}
+.a3{border-color:var(--p3bd);background:var(--p3bg);}
+
+.arm-head{
+  display:flex;align-items:center;gap:5px;padding:6px 8px 4px;
+  font-size:var(--head-font,11px);
+  font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  cursor:pointer;user-select:none;flex-shrink:0;flex-wrap:wrap;
+}
+.arm-head .qnum{
+  width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:900;color:#2e2d2d;flex-shrink:0;
+}
+.arm-head:hover{opacity:.85;}
+.h0 .qnum{background:var(--p0fill);} .h0{color:var(--p0c);}
+.h1 .qnum{background:var(--p1fill);} .h1{color:var(--p1c);}
+.h2 .qnum{background:var(--p2fill);} .h2{color:var(--p2c);}
+.h3 .qnum{background:var(--p3fill);} .h3{color:var(--p3c);}
+.h4{color:var(--p4c);}
+
+.arm-inner{
+  position:absolute;
+  display:flex;flex-direction:column;
+  transform-origin:center center;
+}
+.arm-head{flex:0 0 auto;}
+.arm-scroll{
+  flex:1 1 auto;min-width:0;min-height:0;
+  overflow-y:auto;overflow-x:hidden;padding:5px 6px;
+  display:flex;flex-direction:column;gap:4px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.25) transparent;
+}
+
+.add-chip{
+  padding:3px 7px;border-radius:7px;font-size:calc(var(--chip-font,11px));border:1px dashed rgba(255,255,255,0.2);
+  background:transparent;color:var(--hint);cursor:pointer;text-align:left;font-family:inherit;
+  transition:color .12s,border-color .12s;
+}
+.add-chip:hover{color:var(--muted);border-color:rgba(255,255,255,0.35);}
+
+.chip{
+  padding:4px 7px;border-radius:7px;font-size:var(--chip-font,11px);line-height:1.4;
+  background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.12);
+  cursor:pointer;display:flex;flex-direction:column;gap:2px;
+  transition:border-color .12s,background .12s,box-shadow .12s;color:var(--text);position:relative;
+}
+.chip:hover{background:rgba(0,0,0,0.42);border-color:rgba(255,255,255,0.28);}
+.chip.drag-over{border-color:rgba(245,245,245,0.8);box-shadow:0 0 0 2px rgba(245,245,245,0.4);background:rgba(245,245,245,0.12);}
+.chip.dragging{opacity:0.45;border-style:dashed;}
+.chip-top-row{display:flex;align-items:flex-start;gap:3px;}
+.chip-text{flex:1;word-break:break-word;white-space:normal;}
+.chip-actions{display:flex;align-items:center;gap:2px;flex-shrink:0;margin-top:1px;}
+.chip-badge{font-size:calc(var(--chip-font,11px) * 0.82);color:var(--muted);white-space:nowrap;}
+.chip-del{font-size:calc(var(--chip-font,11px) * 1.1);color:rgba(250,250,250,0.6);flex-shrink:0;opacity:0;line-height:1;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;}
+.chip-edit{font-size:var(--chip-font,11px);color:rgba(250,250,250,0.6);flex-shrink:0;opacity:0;line-height:1;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;}
+.chip:hover .chip-edit{opacity:1;}
+.chip-edit:hover{color:#fff;}
+.chip:hover .chip-del{opacity:1;}
+
+/* EXPAND */
+.arm.arm-expanded{
+  position:fixed !important;z-index:500;
+  border-radius:16px !important;box-shadow:0 8px 48px rgba(0,0,0,0.8);overflow:hidden !important;
+}
+.arm.arm-expanded .arm-inner{
+  position:relative !important;width:100% !important;height:auto !important;
+  left:unset !important;top:unset !important;transform:none !important;
+  display:flex;flex-direction:column;
+}
+.arm.arm-expanded .arm-scroll{overflow-y:auto;max-height:calc(100vh - 120px);}
+.arm-expand-bg{
+  display:none;position:fixed;inset:0;z-index:199;
+  background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);
+}
+.drag-hint{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.75);border:1px solid rgba(245,245,245,0.4);
+  border-radius:8px;padding:6px 14px;font-size:12px;color:rgba(245,245,245,0.9);
+  pointer-events:none;z-index:1000;display:none;backdrop-filter:blur(6px);
+}
+
+/* VIEWS */
+.view{display:none;}
+.view.active{display:block;}
+/* La vista matrix activa debe llenar el alto del main para que sizeMatrix mida bien */
+#view-matrix.active{display:flex;flex-direction:column;flex:1 1 0;min-height:0;}
+
+/* CENTER */
+.xcenter{grid-column:2;grid-row:2;position:relative;border-radius:14px;overflow:hidden;}
+.xsvg{position:absolute;inset:0;width:100%;height:100%;}
+.xtri{cursor:pointer;transition:opacity .15s,fill .55s cubic-bezier(.45,.05,.2,1),fill-opacity .55s;}
+.xtri:hover{opacity:.78;}
+.xtri-label{
+  position:absolute;font-size:8px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none;text-align:center;line-height:1.15;width:42%;
+}
+.xl-top  {top:12%;left:50%;transform:translateX(-50%);}
+.xl-bot  {bottom:12%;left:50%;transform:translateX(-50%) rotate(180deg);}
+.xl-left {left:0%;top:50%;transform:translateY(-50%) rotate(-90deg);}
+.xl-right{right:0%;top:50%;transform:translateY(-50%) rotate(90deg);}
+.xl-count{display:block;font-size:9px;font-weight:900;margin-top:1px;}
+.xhub{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:48px;height:48px;border-radius:50%;background:rgba(20,5,2,0.82);
+  border:1.5px solid rgba(255,255,255,0.22);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:7px;font-weight:800;
+  letter-spacing:.06em;color:rgba(255,200,180,0.7);text-align:center;line-height:1.25;
+  backdrop-filter:blur(10px);pointer-events:none;z-index:3;
+  transition:transform .55s cubic-bezier(.4,0,.2,1);
+}
+
+/* FOCUS VIEW */
+.focus-card{background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:var(--rad-lg);padding:1.2rem;max-width:900px;margin:0 auto;backdrop-filter:blur(10px);}
+.focus-head{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;}
+.focus-pill{font-size:15px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:4px 14px;border-radius:20px;border:1px solid;}
+.focus-nav{display:flex;gap:6px;margin-left:auto;}
+.fobj-list{display:flex;flex-direction:column;gap:5px;margin-bottom:1rem;}
+.fobj-row{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .1s,border-color .1s;}
+.fobj-row:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.15);}
+.fobj-row.selected{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.25);}
+.fobj-num{font-size:14px;font-weight:600;color:var(--text);min-width:20px;padding-top:2px;}
+.fobj-text{font-size:14px;flex:1;line-height:1.4;}
+.fobj-lc{font-size:12px;color:var(--muted);}
+.links-sec{border-top:1px solid rgba(255,255,255,0.12);padding-top:12px;}
+.links-lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);margin-bottom:8px;}
+.links-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.ltag{font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.25);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:4px;transition:border-color .12s,background .12s;}
+.ltag:hover{background:rgba(0,0,0,0.38);}
+.ltag.linked{font-weight:700;}
+.ldot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.focus-hint{font-size:12px;color:var(--hint);font-style:italic;margin-top:8px;}
+
+/* LINKS VIEW */
+.lv-wrap{max-width:580px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
+.lv-block{border:1px solid var(--glass-border);border-radius:var(--rad-lg);overflow:hidden;backdrop-filter:blur(8px);}
+.lv-hdr{padding:8px 14px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.1);}
+.lv-body{padding:10px 14px;display:flex;flex-direction:column;gap:10px;background:rgba(0,0,0,0.22);}
+.lv-oname{font-size:13px;font-weight:500;margin-bottom:4px;}
+.lv-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.lv-tag{font-size:11px;padding:3px 9px;border-radius:5px;border:1px solid;}
+.lv-empty{font-size:12px;color:var(--hint);font-style:italic;}
+
+/* MODALS */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px);}
+.modal-bg.open{display:flex;}
+.modal{background:linear-gradient(160deg,#1f4034,#13261f);border:1px solid rgba(245,245,245,0.25);border-radius:var(--rad-lg);padding:1.4rem;width:370px;max-width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:.9rem;}
+.mfield{margin-bottom:11px;}
+.mfield label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;letter-spacing:.03em;}
+.mfield select,.mfield input,.mfield textarea{width:100%;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .12s;}
+.mfield select:focus,.mfield input:focus,.mfield textarea:focus{border-color:rgba(152,237,206,0.6);}
+.mfield textarea{height:76px;resize:vertical;}
+.mfield select option{background:#13261f;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:.9rem;}
+.pi-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.pi-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.pi-row input{flex:1;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.18);background:rgba(0,0,0,0.28);color:var(--text);font-size:13px;font-family:inherit;}
+.import-area{border:2px dashed rgba(255,255,255,0.25);border-radius:var(--radius);padding:1.4rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:11px;}
+.import-area:hover,.import-area.drag{border-color:rgba(152,237,206,0.6);background:rgba(255,255,255,0.05);}
+.import-area p{font-size:12px;color:var(--muted);margin-top:.3rem;}
+
+/* RESPONSIVE */
+@media(max-width:860px){
+  .shell{grid-template-columns:1fr;gap:.8rem;padding:.8rem;height:auto;overflow:visible;}
+  .aside{overflow:visible;}
+  .main{overflow:visible;}
+  .matrix-section{overflow:visible;}
+  .hero{text-align:center;}.hero-line{margin:.5rem auto 0;}
+  .toolbar{justify-content:center;}
+  /* en móvil: apilado, JS no fija dimensiones (se ven via !important del media) */
+  .matrix-row{flex-direction:column;width:100% !important;height:auto !important;}
+  .rotator-wrap{width:100% !important;height:auto !important;aspect-ratio:1/1;}
+  .who-panel{width:100% !important;height:auto !important;max-height:200px;}
+}
+@media(max-width:520px){
+  .cross{gap:4px;}.arm-head{font-size:10px;padding:4px 5px 3px;}
+  .chip{font-size:10px;}.xhub{width:36px;height:36px;font-size:6px;}
+  .xtri-label{font-size:7px;}.xl-count{font-size:8px;}
+  .btn{font-size:11px;padding:5px 10px;}
+}
+</style>
+</head>
+<body>
+
+<div class="arm-expand-bg" id="arm-expand-bg" onclick="collapseArm()"></div>
+<div class="drag-hint" id="drag-hint">Drop onto another objective to create a link 🔗</div>
+
+<div class="shell">
+  <aside class="aside">
+    <div class="hero">
+      <div class="hero-eyebrow">Strategic Planning</div>
+      <h1 class="hero-title">HOSHIN KANRI<br>X-MATRIX</h1>
+      <div class="hero-sub">Cross Matrix · Relationships at the Center</div>
+      <div class="hero-line"></div>
+    </div>
+    <div class="toolbar">
+      <span class="tb-label">Actions</span>
+      <button class="btn accent" onclick="openAddModal()">＋ Objective</button>
+      <span class="tb-label">Views</span>
+      <div class="toolbar-group">
+        <button class="btn active" id="vb-matrix" onclick="setView('matrix')">⊞ Matrix</button>
+        <button class="btn" id="vb-focus" onclick="setView('focus')">◎ Pillar</button>
+        <button class="btn" id="vb-links" onclick="setView('links')">⇆ Relationships</button>
+      </div>
+      <span class="tb-label">Configuration / Data</span>
+      <div class="toolbar-group">
+        <button class="btn" onclick="openPillarModal()">✎ Pillars</button>
+        <button class="btn" onclick="openImportModal()">📥 Import</button>
+        <button class="btn" onclick="exportExcel()">📤 Excel</button>
+        <button class="btn" onclick="exportCSV()">📋 CSV</button>
+        <button class="btn" onclick="exportImage()">🖼 Image</button>
+      </div>
+      <span class="tb-label">Orientation</span>
+      <button class="btn" onclick="rotateNext()" style="width:100%;justify-content:center;">↺ Rotate°<span class="rot-badge" id="rot-label">↑ 0°</span></button>
+      <span class="tb-label">Font Size</span>
+      <div style="display:flex;align-items:center;gap:7px;width:100%;">
+        <button class="btn" onclick="changeFontSize(-1)" style="flex:1;justify-content:center;">A−</button>
+        <span id="font-size-label" style="font-size:12px;color:var(--muted);min-width:34px;text-align:center;">11px</span>
+        <button class="btn" onclick="changeFontSize(1)" style="flex:1;justify-content:center;">A+</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- MATRIX VIEW -->
+    <div class="view active" id="view-matrix">
+      <div class="matrix-section">
+
+        <!-- flex row: [cuadrado rotatorio] + [who-panel estático] -->
+        <div class="matrix-row">
+
+          <!-- ROTATOR WRAP: cuadrado, contiene el cross que gira -->
+          <div class="rotator-wrap">
+            <div class="rotator" id="rotator">
+              <div class="cross" id="cross">
+
+                <!-- pillar 2 (top) -->
+                <div class="cell pos-top">
+                  <div class="cell-controls">
+                    <button class="ctrl-btn" id="expand-btn-2" onclick="expandArm(2)">⤢</button>
+                    <button class="ctrl-btn" onclick="rotateArmText(2)">↺</button>
+                  </div>
+                  <div class="arm a2" id="arm-2" style="width:100%;height:100%;">
+                    <div class="arm-inner" id="inner-2">
+                      <div class="arm-head h2" onclick="setView('focus',2)"><span class="qnum">3</span><span id="hn2">How · Prioridades</span></div>
+                      <div class="arm-scroll" id="qb-2"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- pillar 1 (left) -->
+                <div class="cell pos-left">
+                  <div class="cell-controls">
+                    <button class="ctrl-btn" id="expand-btn-1" onclick="expandArm(1)">⤢</button>
+                    <button class="ctrl-btn" onclick="rotateArmText(1)">↺</button>
+                  </div>
+                  <div class="arm a1" id="arm-1" style="width:100%;height:100%;">
+                    <div class="arm-inner" id="inner-1">
+                      <div class="arm-head h1" onclick="setView('focus',1)"><span class="qnum">2</span><span id="hn1">How far · Anuales</span></div>
+                      <div class="arm-scroll" id="qb-1"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CENTER -->
+                <div class="xcenter" id="xcenter">
+                  <svg class="xsvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <g id="tri-group" style="transform-origin:50px 50px;transition:transform .55s cubic-bezier(.45,.05,.2,1);">
+                      <polygon class="xtri" id="tri-top"   points="0,0 100,0 50,50"     onclick="focusRelEdge('top')"></polygon>
+                      <polygon class="xtri" id="tri-right" points="100,0 100,100 50,50" onclick="focusRelEdge('right')"></polygon>
+                      <polygon class="xtri" id="tri-bot"   points="0,100 100,100 50,50" onclick="focusRelEdge('bot')"></polygon>
+                      <polygon class="xtri" id="tri-left"  points="0,0 0,100 50,50"     onclick="focusRelEdge('left')"></polygon>
+                      <line x1="0" y1="0" x2="100" y2="100" stroke="rgba(255,255,255,0.18)" stroke-width="0.5"/>
+                      <line x1="100" y1="0" x2="0" y2="100" stroke="rgba(255,255,255,0.18)" stroke-width="0.5"/>
+                    </g>
+                  </svg>
+                  <div class="xtri-label xl-top"   id="lbl-top"></div>
+                  <div class="xtri-label xl-right" id="lbl-right"></div>
+                  <div class="xtri-label xl-bot"   id="lbl-bot"></div>
+                  <div class="xtri-label xl-left"  id="lbl-left"></div>
+                  <div class="xhub">HOSHIN<br>KANRI<span style="font-size:5px;opacity:.6">X-Matrix</span></div>
+                </div>
+
+                <!-- pillar 3 (right) -->
+                <div class="cell pos-right">
+                  <div class="cell-controls">
+                    <button class="ctrl-btn" id="expand-btn-3" onclick="expandArm(3)">⤢</button>
+                    <button class="ctrl-btn" onclick="rotateArmText(3)">↺</button>
+                  </div>
+                  <div class="arm a3" id="arm-3" style="width:100%;height:100%;">
+                    <div class="arm-inner" id="inner-3">
+                      <div class="arm-head h3" onclick="setView('focus',3)"><span class="qnum">4</span><span id="hn3">How much · Targets</span></div>
+                      <div class="arm-scroll" id="qb-3"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- pillar 0 (bottom) -->
+                <div class="cell pos-bot">
+                  <div class="cell-controls">
+                    <button class="ctrl-btn" id="expand-btn-0" onclick="expandArm(0)">⤢</button>
+                    <button class="ctrl-btn" onclick="rotateArmText(0)">↺</button>
+                  </div>
+                  <div class="arm a0" id="arm-0" style="width:100%;height:100%;">
+                    <div class="arm-inner" id="inner-0">
+                      <div class="arm-head h0" onclick="setView('focus',0)"><span class="qnum">1</span><span id="hn0">What · Largo plazo</span></div>
+                      <div class="arm-scroll" id="qb-0"></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- /cross -->
+            </div><!-- /rotator -->
+          </div><!-- /rotator-wrap -->
+
+          <!-- WHO PANEL — hermano del rotator-wrap, NO gira -->
+          <div class="who-panel" id="who-panel">
+            <div class="who-header">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-right:5px;">
+                <div class="arm-head h4" onclick="setView('focus',4)" style="padding:6px 6px 4px;">
+                  <span class="qnum" style="background:var(--p4fill);color:#1a0503;">5</span>
+                  <span id="hn4">Who · Responsables</span>
+                </div>
+                <button class="ctrl-btn" id="expand-btn-who" onclick="expandWho()"
+                  style="opacity:1;position:static;width:20px;height:20px;font-size:10px;">⤢</button>
+              </div>
+              <div class="who-stats" id="who-stats"></div>
+            </div>
+            <div class="arm-scroll" id="qb-4"></div>
+          </div><!-- /who-panel -->
+
+        </div><!-- /matrix-row -->
+
+        <p style="text-align:center;font-size:10px;color:var(--hint);margin-top:.4rem;font-style:italic;">
+          Triangles show connections between adjacent pillars · Drag objectives to link them
+        </p>
+      </div>
+    </div><!-- /view-matrix -->
+
+    <!-- FOCUS VIEW -->
+    <div class="view" id="view-focus">
+      <div class="focus-card">
+        <div class="focus-head">
+          <div class="focus-pill" id="fp-pill">—</div>
+          <div class="focus-nav">
+            <button class="btn" onclick="focusPrev()">← Previous</button>
+            <button class="btn" onclick="focusNext()">Next →</button>
+            <button class="btn" onclick="setView('matrix')">✕</button>
+          </div>
+        </div>
+        <div class="fobj-list" id="fobj-list"></div>
+        <div class="links-sec">
+          <div class="links-lbl">Link to other objectives</div>
+          <div class="links-grid" id="flinks-grid"></div>
+          <div class="focus-hint" id="fhint">Select an Objective to link</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINKS VIEW -->
+    <div class="view" id="view-links">
+      <div class="lv-wrap" id="lv-wrap"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-add"><div class="modal">
+  <h3>Add an Objective</h3>
+  <div class="mfield"><label>Pillar</label><select id="add-pilar"></select></div>
+  <div class="mfield"><label>Description</label><textarea id="add-text" placeholder="Write the objective or initiative…"></textarea></div>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModal('modal-add')">Cancel</button>
+    <button class="btn accent" onclick="saveObjective()">Save</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="modal-pillars"><div class="modal">
+  <h3>Edit pillar names</h3>
+  <div id="pillar-inputs"></div>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModal('modal-pillars')">Cancel</button>
+    <button class="btn accent" onclick="savePillars()">Save</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="modal-import"><div class="modal">
+  <h3>Import Excel / CSV</h3>
+  <div class="import-area" id="drop-area" onclick="document.getElementById('file-inp').click()">
+    <div style="font-size:2rem;">📂</div>
+    <p>Click or drag a file .xlsx or .csv</p>
+    <p style="font-size:15px;margin-top:.3rem;color:var(--text)">Columns: Pillar No., Pillar Name, Objective / Responsible, Relationships</p>
+  </div>
+  <input type="file" id="file-inp" accept=".xlsx,.csv" style="display:none" onchange="handleFileImport(event)">
+  <p style="font-size:15px;color:var(--text);margin-bottom:11px;">
+    <strong style="color:var(--muted)">Format:</strong> 4 columns — Pillar No. (0–4), Pillar Name, Objective / Responsible, Relationships (separated by " | ").<br>
+    <span style="color:var(--text)">Pillar 4 = Who · Responsables. Use the responsible's name in the Objective / Responsible column.</span>
+  </p>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModal('modal-import')">Close</button>
+    <button class="btn accent" onclick="downloadTemplate()">⬇ Template</button>
+  </div>
+</div></div>
+
+<script>
+/* ════════════ STATE ════════════ */
+const S={
+  pillars:['What · Largo plazo','How far · Anuales','How · Prioridades','How much · Targets','Who · Responsables'],
+  objectives:[],links:{},nextId:1
+};
+const PCOLS=['var(--p0c)','var(--p1c)','var(--p2c)','var(--p3c)','var(--p4c)'];
+const PFILL=['var(--p0fill)','var(--p1fill)','var(--p2fill)','var(--p3fill)','var(--p4fill)'];
+
+let currentView='matrix',currentFocus=0,currentRot=0,selectedObjId=null;
+const ROT_LABELS=['↑ 0°','↺ 90°','↺ 180°','↺ 270°'];
+const POS=['pos-top','pos-right','pos-bot','pos-left'];
+const PILLAR_HOME_SLOT={2:0,3:1,0:2,1:3};
+const armTextRot={0:0,1:0,2:0,3:0};
+const BASE_DEG={2:90,3:180,0:270,1:0};
+
+/* ════════════ SEED ════════════ */
+function seed(){
+  const a=(p,t)=>S.objectives.push({id:S.nextId++,pillar:p,text:t});
+  a(2,'Liderar prioridades de seguridad'); a(2,'Excelencia operacional');
+  a(1,'Crecer 20% revenue anual');         a(1,'Reducir churn a <5%');
+  a(0,'Visión: terminal #1 del país');     a(0,'Sostenibilidad a 5 años');
+  a(3,'NPS Objective 65');                 a(3,'Productividad +15%');
+  lk(1,3);lk(2,4);lk(5,8);lk(6,7);
+}
+
+/* ════════════ LINK HELPERS ════════════ */
+function lk(a,b){
+  if(!S.links[a])S.links[a]=[];if(!S.links[b])S.links[b]=[];
+  if(!S.links[a].includes(b))S.links[a].push(b);
+  if(!S.links[b].includes(a))S.links[b].push(a);
+}
+function unlk(a,b){S.links[a]=(S.links[a]||[]).filter(x=>x!==b);S.links[b]=(S.links[b]||[]).filter(x=>x!==a);}
+function toggleLink(a,b){(S.links[a]||[]).includes(b)?unlk(a,b):lk(a,b);renderAll();renderFocusView();}
+function pillarRelCount(pa){return S.objectives.filter(o=>Number(o.pillar)===pa).reduce((s,o)=>s+(S.links[o.id]||[]).length,0);}
+
+/* ════════════ RENDER ════════════ */
+function renderAll(){
+  renderHeads();renderArms();renderCenter();renderWho();
+  if(currentView==='focus')renderFocusView();
+  if(currentView==='links')renderLinksView();
+  requestAnimationFrame(applyPositions);
+}
+
+function renderHeads(){
+  [0,1,2,3].forEach(i=>document.getElementById('hn'+i).textContent=S.pillars[i]);
+  const h4=document.getElementById('hn4');if(h4)h4.textContent=S.pillars[4];
+}
+
+function makeChip(obj,extraDrop){
+  const relCount=(S.links[obj.id]||[]).length;
+  const d=document.createElement('div');
+  d.className='chip';d.draggable=true;d.dataset.id=obj.id;
+  d.innerHTML=`<div class="chip-top-row"><span class="chip-text">${obj.text}</span><div class="chip-actions"><span class="chip-badge">🔗${relCount}</span><button class="chip-edit" onclick="editObj(event,${obj.id})">✎</button><button class="chip-del" onclick="delObj(event,${obj.id})">✕</button></div></div>`;
+  d.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',String(obj.id));e.dataTransfer.effectAllowed='link';d.classList.add('dragging');document.getElementById('drag-hint').style.display='block';});
+  d.addEventListener('dragend',()=>{d.classList.remove('dragging');document.getElementById('drag-hint').style.display='none';document.querySelectorAll('.chip').forEach(c=>c.classList.remove('drag-over'));});
+  d.addEventListener('dragover',e=>{e.preventDefault();if(e.currentTarget!==document.querySelector('.chip.dragging'))d.classList.add('drag-over');});
+  d.addEventListener('dragleave',()=>d.classList.remove('drag-over'));
+  d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('drag-over');const src=parseInt(e.dataTransfer.getData('text/plain'));if(src!==obj.id)toggleLink(src,obj.id);});
+  d.addEventListener('click',e=>{if(e.target.classList.contains('chip-del')||e.target.classList.contains('chip-edit'))return;setView('focus',obj.pillar,obj.id);});
+  return d;
+}
+
+function renderArms(){
+  [0,1,2,3].forEach(p=>{
+    const b=document.getElementById('qb-'+p);b.innerHTML='';
+    S.objectives.filter(o=>Number(o.pillar)===p).forEach(obj=>b.appendChild(makeChip(obj)));
+    const ab=document.createElement('button');ab.className='add-chip';ab.textContent='+ Add';ab.onclick=()=>openAddModalFor(p);b.appendChild(ab);
+  });
+}
+
+function renderWho(){
+  const b=document.getElementById('qb-4');if(!b)return;
+  b.innerHTML='';
+  const objs=S.objectives.filter(o=>Number(o.pillar)===4);
+  document.getElementById('who-stats').textContent=`${objs.length} responsables · ${pillarRelCount(4)} rel`;
+  document.getElementById('hn4').textContent=S.pillars[4];
+  objs.forEach(obj=>b.appendChild(makeChip(obj)));
+  const ab=document.createElement('button');ab.className='add-chip';ab.textContent='+ Add';ab.onclick=()=>openAddModalFor(4);b.appendChild(ab);
+}
+
+function renderCenter(){
+  const [pTop,pRight,pBot,pLeft]=[2,3,0,1];
+  [{id:'tri-top',p:pTop},{id:'tri-right',p:pRight},{id:'tri-bot',p:pBot},{id:'tri-left',p:pLeft}].forEach(({id,p})=>{
+    const el=document.getElementById(id);el.setAttribute('fill',PFILL[p]);el.setAttribute('fill-opacity','0.55');
+  });
+  const wedge={top:[pTop,pRight],right:[pRight,pBot],bot:[pBot,pLeft],left:[pLeft,pTop]};
+  ['top','right','bot','left'].forEach(k=>{
+    const a=wedge[k][0];
+    const n=S.objectives.filter(o=>Number(o.pillar)===a).length;
+    document.getElementById('lbl-'+k).innerHTML=`${S.pillars[a]}<span class="xl-count">${n} obj · ${pillarRelCount(a)} rel</span>`;
+  });
+}
+
+function focusRelEdge(){setView('links');}
+
+/* ════════════ FOCUS VIEW ════════════ */
+function renderFocusView(){
+  const objs=S.objectives.filter(o=>Number(o.pillar)===currentFocus);
+  const pill=document.getElementById('fp-pill');
+  pill.textContent=S.pillars[currentFocus];pill.className='focus-pill';
+  pill.style.borderColor=PCOLS[currentFocus];pill.style.color=PCOLS[currentFocus];pill.style.background='rgba(0,0,0,0.3)';
+
+  const list=document.getElementById('fobj-list');list.innerHTML='';
+  if(!objs.length){list.innerHTML='<div style="font-size:13px;color:var(--hint);font-style:italic">No objectives in this pillar.</div>';return;}
+  objs.forEach((obj,i)=>{
+    const lc=(S.links[obj.id]||[]).length;
+    const r=document.createElement('div');
+    r.className='fobj-row'+(selectedObjId===obj.id?' selected':'');
+    r.innerHTML=`<span class="fobj-num">${i+1}.</span><span class="fobj-text">${obj.text}</span>`+(lc?`<span class="fobj-lc">🔗${lc}</span>`:'');
+    r.onclick=()=>{selectedObjId=obj.id;renderFocusView();};
+    list.appendChild(r);
+  });
+
+  const grid=document.getElementById('flinks-grid');const hint=document.getElementById('fhint');grid.innerHTML='';
+  if(!selectedObjId){hint.textContent='Select an objective to link.';return;}
+  const sel=S.objectives.find(o=>o.id===selectedObjId);
+  if(!sel){selectedObjId=null;return;}
+  hint.textContent=`Linking: "${sel.text}"`;
+  const others=S.objectives.filter(o=>o.id!==selectedObjId);
+  if(!others.length){grid.innerHTML='<span class="focus-hint">No other objectives.</span>';return;}
+  others.forEach(oth=>{
+    const linked=(S.links[selectedObjId]||[]).includes(oth.id);
+    const col=PCOLS[oth.pillar];
+    const t=document.createElement('div');t.className='ltag'+(linked?' linked':'');t.style.borderColor=linked?col:'';
+    t.innerHTML=`<span class="ldot" style="background:${col}"></span><span style="color:var(--hint);font-size:10px">[${S.pillars[oth.pillar].split('·')[0].trim()}]</span> <span>${oth.text}</span>`+(linked?` <span style="color:${col}">✓</span>`:'');
+    t.onclick=()=>toggleLink(selectedObjId,oth.id);grid.appendChild(t);
+  });
+}
+
+/* ════════════ LINKS VIEW ════════════ */
+function renderLinksView(){
+  const el=document.getElementById('lv-wrap');el.innerHTML='';
+  S.pillars.forEach((pname,pi)=>{
+    const objs=S.objectives.filter(o=>o.pillar===pi);if(!objs.length)return;
+    const block=document.createElement('div');block.className='lv-block';
+    const hdr=document.createElement('div');hdr.className='lv-hdr';hdr.style.color=PCOLS[pi];hdr.textContent=pname;block.appendChild(hdr);
+    const body=document.createElement('div');body.className='lv-body';
+    objs.forEach(obj=>{
+      const myLinks=(S.links[obj.id]||[]).map(lid=>S.objectives.find(x=>x.id===lid)).filter(Boolean);
+      const row=document.createElement('div');
+      const nm=document.createElement('div');nm.className='lv-oname';nm.textContent=obj.text;row.appendChild(nm);
+      if(myLinks.length){
+        const tr=document.createElement('div');tr.className='lv-tags';
+        myLinks.forEach(ln=>{const t=document.createElement('span');t.className='lv-tag';t.style.borderColor=PCOLS[ln.pillar];t.style.color=PCOLS[ln.pillar];t.textContent=ln.text;tr.appendChild(t);});
+        row.appendChild(tr);
+      }else{const em=document.createElement('div');em.className='lv-empty';em.textContent='No links';row.appendChild(em);}
+      body.appendChild(row);
+    });
+    block.appendChild(body);el.appendChild(block);
+  });
+  if(!el.children.length)el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--hint);font-style:italic">No objectives yet.</div>';
+}
+
+/* ════════════ VIEW SWITCH ════════════ */
+function setView(view,pillarIdx,objId){
+  if(view==='matrix')collapseArm();
+  currentView=view;
+  ['matrix','focus','links'].forEach(v=>{
+    document.getElementById('view-'+v).classList.toggle('active',v===view);
+    const b=document.getElementById('vb-'+v);if(b)b.classList.toggle('active',v===view);
+  });
+  if(view==='focus'){if(pillarIdx!==undefined)currentFocus=pillarIdx;selectedObjId=objId!==undefined?objId:null;renderFocusView();}
+  if(view==='links')renderLinksView();
+  if(view==='matrix')requestAnimationFrame(()=>requestAnimationFrame(()=>{sizeMatrix();[0,1,2,3].forEach(setArmDimensions);}));
+}
+
+/* ════════════ ROTATE GLOBAL ════════════ */
+let wheelDeg=0;
+function rotateNext(){
+  collapseArm();
+  wheelDeg-=90;currentRot=(currentRot+1)%4;
+  const cross=document.getElementById('cross');
+  cross.style.transition='transform .55s cubic-bezier(.4,0,.2,1)';
+  cross.style.transform=`translateZ(0) rotate(${wheelDeg}deg)`;
+  document.getElementById('rot-label').textContent=ROT_LABELS[currentRot];
+  // contra-rotar el hub para que el texto quede siempre derecho
+  const hub=document.querySelector('.xhub');
+  if(hub) hub.style.transform=`translate(-50%,-50%) rotate(${-wheelDeg}deg)`;
+  setTimeout(()=>[0,1,2,3].forEach(setArmDimensions),600);
+}
+
+/* ════════════ ROTATE ARM TEXT ════════════ */
+function rotateArmText(p){collapseArm();armTextRot[p]=(armTextRot[p]+90)%360;setArmDimensions(p);}
+
+/* ════════════ ARM DIMENSIONS ════════════ */
+function setArmDimensions(pillar){
+  const arm=document.getElementById('arm-'+pillar);
+  const inner=document.getElementById('inner-'+pillar);
+  if(!arm||!inner||expandedArmPillar===pillar)return;
+  const total=(BASE_DEG[pillar]+(armTextRot[pillar]||0))%360;
+  const isV=(total%180!==0);
+  const W=arm.clientWidth,H=arm.clientHeight;
+  inner.style.width =(isV?H:W)+'px';
+  inner.style.height=(isV?W:H)+'px';
+  inner.style.left='50%';inner.style.top='50%';
+  inner.style.transform=`translate(-50%,-50%) rotate(${total}deg)`;
+}
+
+/* ════════════ SIZE MATRIX (JS-driven) ════════════
+   Calcula el lado del cuadrado para que quepa en el .main disponible,
+   reservando espacio horizontal para el who-panel.
+   Proporción del who-panel = ancho de un brazo lateral del cross.
+   Cross grid = 1 : 1.15 : 1 (cols) → brazo lateral = 1/3.15 ≈ 0.317 del lado.
+*/
+const WHO_RATIO = 1/3.15;   // ancho del who-panel relativo al lado del cuadrado
+const ROW_GAP   = 6;        // gap entre cuadrado y who-panel
+
+function sizeMatrix(){
+  const main    = document.querySelector('.main');
+  const section = document.querySelector('.matrix-section');
+  const row     = document.querySelector('.matrix-row');
+  const wrap    = document.querySelector('.rotator-wrap');
+  const who     = document.getElementById('who-panel');
+  if(!main || !section || !row || !wrap || !who) return;
+  if(currentView !== 'matrix') return;
+  // En móvil el CSS (media query) controla el layout apilado; no fijamos px.
+  if(window.innerWidth <= 860){
+    row.style.width=''; row.style.height='';
+    wrap.style.width=''; wrap.style.height='';
+    who.style.width=''; who.style.height=''; who.style.marginTop='';
+    return;
+  }
+
+  // Medir desde .main (tiene alto real = viewport menos padding del shell)
+  const availH = main.clientHeight - 30;  // reserva para el <p> de ayuda
+  const availW = main.clientWidth;
+
+  // El conjunto ocupa: lado*(1+WHO_RATIO)+gap de ancho, y "lado" de alto.
+  const sideByH = availH;
+  const sideByW = (availW - ROW_GAP) / (1 + WHO_RATIO);
+  let side = Math.floor(Math.min(sideByH, sideByW));
+  side = Math.max(side, 320); // mínimo razonable
+
+  const whoW = Math.round(side * WHO_RATIO);
+
+  wrap.style.width  = side + 'px';
+  wrap.style.height = side + 'px';
+
+  /* El panel WHO debe imitar al brazo lateral (rojo/derecho):
+     - altura = fila central del grid = 1.15/3.15 del lado
+     - posición vertical = empieza después de la fila superior (1/3.15 + gap)
+     Usamos margin-top para empujarlo a la altura del brazo rojo. */
+  const unit      = (side - 2*ROW_GAP) / 3.15;  // 1fr en px
+const armHeight = unit * 1.15;                 // alto exacto del brazo central
+const armTop    = unit + ROW_GAP;              // empieza tras la fila superior + gap
+
+  who.style.width     = whoW + 'px';
+  who.style.height    = Math.round(armHeight) + 'px';
+  who.style.marginTop = Math.round(armTop) + 'px';
+
+  row.style.width   = (side + ROW_GAP + whoW) + 'px';
+  row.style.height  = side + 'px';
+}
+
+function applyPositions(){
+  sizeMatrix();
+  for(const p in PILLAR_HOME_SLOT){
+    const arm=document.getElementById('arm-'+p);
+    const cell=arm.parentElement;
+    cell.classList.remove('pos-top','pos-right','pos-bot','pos-left');
+    cell.classList.add(POS[PILLAR_HOME_SLOT[p]]);
+    setArmDimensions(Number(p));
+  }
+}
+
+/* ════════════ EXPAND ARM ════════════ */
+let expandedArmPillar=null;
+function expandArm(pillar){
+  if(expandedArmPillar!==null){collapseArm();return;}
+  const arm=document.getElementById('arm-'+pillar);
+  const rect=arm.getBoundingClientRect();
+  const ph=document.createElement('div');ph.id='arm-placeholder-'+pillar;ph.style.display='none';
+  arm.parentElement.insertBefore(ph,arm);document.body.appendChild(arm);
+  expandedArmPillar=pillar;
+  const tW=Math.min(460,window.innerWidth-40),tH=Math.min(560,window.innerHeight-80);
+  Object.assign(arm.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px',zIndex:'500',transition:'left .35s ease,top .35s ease,width .35s ease,height .35s ease,border-radius .35s ease',margin:'0'});
+  document.getElementById('arm-expand-bg').style.display='block';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    arm.classList.add('arm-expanded');
+    Object.assign(arm.style,{left:((window.innerWidth-tW)/2)+'px',top:((window.innerHeight-tH)/2)+'px',width:tW+'px',height:tH+'px',borderRadius:'16px'});
+  }));
+  const btn=document.getElementById('expand-btn-'+pillar);if(btn){btn.textContent='✕';btn.classList.add('active');}
+}
+
+function expandWho(){
+  const panel=document.getElementById('who-panel'),btn=document.getElementById('expand-btn-who');
+  const rect=panel.getBoundingClientRect();
+  const ph=document.createElement('div');ph.id='who-placeholder';ph.style.cssText=`width:${rect.width}px;height:${rect.height}px;`;
+  panel.parentElement.insertBefore(ph,panel);document.body.appendChild(panel);
+  const tW=Math.min(460,window.innerWidth-40),tH=Math.min(560,window.innerHeight-80);
+  Object.assign(panel.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px',zIndex:'500',margin:'0',maxHeight:'none',transition:'left .35s ease,top .35s ease,width .35s ease,height .35s ease,border-radius .35s ease',boxShadow:'0 8px 48px rgba(0,0,0,0.8)'});
+  document.getElementById('arm-expand-bg').style.display='block';
+  document.getElementById('arm-expand-bg').onclick=collapseWho;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    Object.assign(panel.style,{left:((window.innerWidth-tW)/2)+'px',top:((window.innerHeight-tH)/2)+'px',width:tW+'px',height:tH+'px',borderRadius:'16px'});
+  }));
+  btn.textContent='✕';btn.onclick=collapseWho;
+}
+
+function collapseWho(){
+  const panel=document.getElementById('who-panel'),btn=document.getElementById('expand-btn-who'),ph=document.getElementById('who-placeholder');
+  ['position','left','top','width','height','zIndex','margin','marginTop','maxHeight','transition','boxShadow','borderRadius'].forEach(k=>panel.style[k]='');
+  if(ph){ph.parentElement.insertBefore(panel,ph);ph.remove();}
+  document.getElementById('arm-expand-bg').style.display='none';
+  document.getElementById('arm-expand-bg').onclick=collapseArm;
+  btn.textContent='⤢';btn.onclick=expandWho;
+  // Recalcular dimensiones y posición del panel WHO
+  requestAnimationFrame(()=>requestAnimationFrame(sizeMatrix));
+}
+
+function collapseArm(){
+  if(expandedArmPillar===null)return;
+  const p=expandedArmPillar,arm=document.getElementById('arm-'+p),inner=document.getElementById('inner-'+p);
+  arm.classList.remove('arm-expanded');
+  ['position','left','top','width','height','zIndex','transition','borderRadius','margin'].forEach(k=>arm.style[k]='');
+  ['transform','width','height','left','top'].forEach(k=>inner.style[k]='');
+  const ph=document.getElementById('arm-placeholder-'+p);
+  if(ph){ph.parentElement.insertBefore(arm,ph);ph.remove();}
+  arm.style.width='100%';arm.style.height='100%';
+  document.getElementById('arm-expand-bg').style.display='none';
+  const btn=document.getElementById('expand-btn-'+p);if(btn){btn.textContent='⤢';btn.classList.remove('active');}
+  expandedArmPillar=null;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>setArmDimensions(p)));
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')collapseArm();});
+
+function focusPrev(){currentFocus=(currentFocus+4)%5;selectedObjId=null;renderFocusView();}
+function focusNext(){currentFocus=(currentFocus+1)%5;selectedObjId=null;renderFocusView();}
+
+/* ════════════ CRUD ════════════ */
+function openAddModal(){openAddModalFor(0);}
+function openAddModalFor(p){
+  document.getElementById('add-pilar').innerHTML=S.pillars.map((n,i)=>`<option value="${i}"${i===p?' selected':''}>${n}</option>`).join('');
+  openModal('modal-add');setTimeout(()=>document.getElementById('add-text').focus(),80);
+}
+function saveObjective(){
+  const text=document.getElementById('add-text').value.trim();
+  const pilar=parseInt(document.getElementById('add-pilar').value);
+  if(!text)return;
+  S.objectives.push({id:S.nextId++,pillar:pilar,text});
+  closeModal('modal-add');document.getElementById('add-text').value='';renderAll();
+}
+function delObj(e,id){
+  e.stopPropagation();
+  S.objectives=S.objectives.filter(o=>o.id!==id);delete S.links[id];
+  for(const k in S.links)S.links[k]=S.links[k].filter(x=>x!==id);
+  if(selectedObjId===id)selectedObjId=null;renderAll();
+}
+
+function editObj(e,id){
+  e.stopPropagation();
+  const obj=S.objectives.find(o=>o.id===id);
+  if(!obj)return;
+  const nuevo=prompt('Edit objective:',obj.text);
+  if(nuevo!==null&&nuevo.trim()){
+    obj.text=nuevo.trim();
+    renderAll();
+  }
+}
+
+/* ════════════ PILLARS MODAL ════════════ */
+const PI_COLORS=['#4fc3f7','#ffd54f','#66bb6a','#ef5350','#90a4ae'];
+function openPillarModal(){
+  document.getElementById('pillar-inputs').innerHTML=S.pillars.map((p,i)=>
+    `<div class="pi-row"><div class="pi-dot" style="background:${PI_COLORS[i]}"></div><input type="text" id="pi${i}" value="${p}"></div>`).join('');
+  openModal('modal-pillars');
+}
+function savePillars(){
+  for(let i=0;i<5;i++){const v=document.getElementById('pi'+i).value.trim();if(v)S.pillars[i]=v;}
+  closeModal('modal-pillars');renderAll();
+}
+
+/* ════════════ IMPORT ════════════ */
+function openImportModal(){openModal('modal-import');}
+function handleFileImport(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  if(file.name.toLowerCase().endsWith('.csv')){reader.onload=e=>importData(parseCSV(e.target.result));reader.readAsText(file,'UTF-8');}
+  else{reader.onload=e=>importData(parseXLSX(e.target.result));reader.readAsArrayBuffer(file);}
+  evt.target.value='';
+}
+function parseCSV(raw){
+  const lines=raw.split(/\r?\n/).filter(l=>l.trim());
+  const first=lines[0].split(/[,;]/).map(c=>c.trim().toLowerCase());
+  const skip=first.some(c=>c.includes('pilar')||c.includes('objective')||c.includes('nro'))?1:0;
+  return lines.slice(skip).map(l=>l.match(/("(?:[^"]|"")*"|[^,;]*)[,;]?/g).map(c=>c.replace(/,$|;$/,'').replace(/^"|"$/g,'').replace(/""/g,'"').trim()));
+}
+function parseXLSX(buf){
+  const wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  const first=(rows[0]||[]).map(c=>String(c).toLowerCase());
+  return first.some(c=>c.includes('pilar')||c.includes('objective')||c.includes('nro'))?rows.slice(1):rows;
+}
+function resolvePillar(raw){
+  const r=raw.toLowerCase().trim(),n=parseInt(r);
+  if(!isNaN(n)&&n>=0&&n<=4)return n;
+  const i=S.pillars.findIndex(p=>p.toLowerCase().includes(r)||r.includes(p.toLowerCase().substring(0,4)));
+  return i>=0?i:-1;
+}
+function importData(rows){
+  const valid=rows.filter(c=>c&&c.some(x=>String(x).trim()));
+  if(!valid.length){alert('❌ File empty or unreadable.');return;}
+  let errs=0,ok=0;
+  valid.forEach(c=>{if(!c||c.length<3){errs++;return;}const t=String(c[2]||'').trim();if(!t)return;resolvePillar(String(c[0]||''))<0?errs++:ok++;});
+  if(!ok){alert('❌ No valid rows.\n\nExpected: Col A = Pillar 0–4, Col B = Name, Col C = Objective / Responsible, Col D = Relations ( | )\n\nPillar 4 = Who · Responsables');return;}
+  const newObjs=[];const upd=new Set();
+  valid.forEach(c=>{
+    if(!c||c.length<3)return;
+    const pi=resolvePillar(String(c[0]||''));if(pi<0)return;
+    const pn=String(c[1]||'').trim();const tx=String(c[2]||'').trim();if(!tx)return;
+    if(pn&&!upd.has(pi)){S.pillars[pi]=pn;upd.add(pi);}
+    const id=S.nextId++;S.objectives.push({id,pillar:pi,text:tx});newObjs.push({id,rel:String(c[3]||'').trim()});
+  });
+  newObjs.forEach(({id,rel})=>{if(!rel)return;rel.split('|').map(s=>s.trim()).filter(Boolean).forEach(rn=>{const t=S.objectives.find(o=>o.text===rn);if(t&&t.id!==id)lk(id,t.id);});});
+  closeModal('modal-import');renderAll();
+  alert(`✅ Imported ${newObjs.length} objectives.`+(errs>0?`\n⚠️ ${errs} row(s) skipped.`:''));
+}
+
+/* ════════════ EXPORT ════════════ */
+function getExportRows(){
+  return [['Pillar No.','Pillar Name','Objective / Responsible','Relationships'],
+    ...S.objectives.map(obj=>[obj.pillar,S.pillars[obj.pillar],obj.text,
+      (S.links[obj.id]||[]).map(lid=>{const t=S.objectives.find(x=>x.id===lid);return t?t.text:'';}).filter(Boolean).join(' | ')])];
+}
+function exportExcel(){
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(getExportRows());
+  ws['!cols']=[{wch:10},{wch:28},{wch:50},{wch:60}];XLSX.utils.book_append_sheet(wb,ws,'HoshinKanri');XLSX.writeFile(wb,'HoshinKanri.xlsx');
+}
+function exportCSV(){
+  const csv=getExportRows().map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));a.download='HoshinKanri.csv';a.click();
+}
+function downloadTemplate(){
+  const rows=[['Pillar No.','Pillar Name','Objective / Responsible','Relationships'],
+    [0,S.pillars[0],'Visión a 5 años',''],
+    [1,S.pillars[1],'Crecer 15% este año','Visión a 5 años'],
+    [2,S.pillars[2],'Prioridad de seguridad',''],
+    [3,S.pillars[3],'KPI >85%','Crecer 15% este año | Prioridad de seguridad'],
+    [4,S.pillars[4],'Juan Pérez (Responsable)','KPI >85%']];
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:10},{wch:28},{wch:50},{wch:60}];XLSX.utils.book_append_sheet(wb,ws,'Plantilla');XLSX.writeFile(wb,'HoshinKanri_Plantilla.xlsx');
+}
+
+/* ════════════ EXPORT IMAGE ════════════ */
+async function exportImage(){
+  const CARD_W=320, GAP=16;
+  const COLORS=['#4fc3f7','#ffd54f','#66bb6a','#ef5350','#b0bec5'];
+  const BKGS=['rgba(79,195,247,0.16)','rgba(255,213,79,0.16)','rgba(102,187,106,0.16)','rgba(239,83,80,0.16)','rgba(240,245,250,0.12)'];
+  const BORDS=['rgba(79,195,247,0.5)','rgba(255,213,79,0.5)','rgba(102,187,106,0.5)','rgba(239,83,80,0.5)','rgba(176,190,197,0.5)'];
+  const FILLS=['#29b6f6','#ffca28','#43a047','#e53935','#90a4ae'];
+
+  function buildCard(pillarIdx){
+    const objs=S.objectives.filter(o=>Number(o.pillar)===pillarIdx);
+    const card=document.createElement('div');
+    card.style.cssText=`background:${BKGS[pillarIdx]};border:1px solid ${BORDS[pillarIdx]};border-radius:14px;padding:12px;width:${CARD_W}px;box-sizing:border-box;flex-shrink:0;`;
+    const hdr=document.createElement('div');
+    hdr.style.cssText='display:flex;align-items:center;gap:7px;margin-bottom:10px;';
+    const qn=document.createElement('span');
+    qn.style.cssText=`width:22px;height:22px;border-radius:50%;background:${FILLS[pillarIdx]};display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#1a0503;flex-shrink:0;`;
+    qn.textContent=pillarIdx+1;
+    const tl=document.createElement('span');
+    tl.style.cssText=`font-size:14px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:${COLORS[pillarIdx]};`;
+    tl.textContent=S.pillars[pillarIdx];
+    hdr.appendChild(qn);hdr.appendChild(tl);card.appendChild(hdr);
+    objs.forEach(obj=>{
+      const chip=document.createElement('div');
+      chip.style.cssText=`padding:5px 8px;border-radius:7px;font-size:${chipFontSize}px;line-height:1.4;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.12);margin-bottom:4px;display:flex;justify-content:space-between;align-items:flex-start;`;
+      const tx=document.createElement('span');tx.style.cssText='flex:1;word-break:break-word;color:#fff;';tx.textContent=obj.text;
+      const bg=document.createElement('span');bg.style.cssText='font-size:9px;color:rgba(255,255,255,0.55);white-space:nowrap;margin-left:5px;flex-shrink:0;';bg.textContent=`🔗${(S.links[obj.id]||[]).length}`;
+      chip.appendChild(tx);chip.appendChild(bg);card.appendChild(chip);
+    });
+    const ft=document.createElement('div');ft.style.cssText='font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;';
+    ft.textContent=`${objs.length} ${pillarIdx===4?'responsables':'objectives'} · ${pillarRelCount(pillarIdx)} relations`;
+    card.appendChild(ft);
+    return card;
+  }
+
+  function buildCenter(size){
+    const F=['#29b6f6','#ffca28','#43a047','#e53935'];
+    const d=document.createElement('div');
+    d.style.cssText=`width:${size}px;height:${size}px;position:relative;border-radius:14px;overflow:hidden;flex-shrink:0;`;
+    const fL=Math.max(7,Math.round(size*0.022));   // tamaño nombre pilar
+    const fC=Math.max(8,Math.round(size*0.026));   // tamaño contador obj·rel
+    const hub=Math.max(56,Math.round(size*0.18));  // tamaño del hub central
+    d.innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;">
+      <polygon points="0,0 100,0 50,50" fill="${F[2]}" fill-opacity="0.55"/>
+      <polygon points="100,0 100,100 50,50" fill="${F[3]}" fill-opacity="0.55"/>
+      <polygon points="0,100 100,100 50,50" fill="${F[0]}" fill-opacity="0.55"/>
+      <polygon points="0,0 0,100 50,50" fill="${F[1]}" fill-opacity="0.55"/>
+      <line x1="0" y1="0" x2="100" y2="100" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+      <line x1="100" y1="0" x2="0" y2="100" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+    </svg>
+    <div style="position:absolute;top:8%;left:50%;transform:translateX(-50%);text-align:center;font-size:${fL}px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);letter-spacing:.04em;text-transform:uppercase;line-height:1.2;">${S.pillars[2]}<br><span style="font-size:${fC}px;font-weight:900;">${S.objectives.filter(o=>o.pillar===2).length} obj · ${pillarRelCount(2)} rel</span></div>
+    <div style="position:absolute;bottom:8%;left:50%;transform:translateX(-50%);text-align:center;font-size:${fL}px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);letter-spacing:.04em;text-transform:uppercase;line-height:1.2;">${S.pillars[0]}<br><span style="font-size:${fC}px;font-weight:900;">${S.objectives.filter(o=>o.pillar===0).length} obj · ${pillarRelCount(0)} rel</span></div>
+    <div style="position:absolute;left:2%;top:50%;transform:translateY(-50%);text-align:center;font-size:${fL}px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);letter-spacing:.04em;text-transform:uppercase;line-height:1.2;">${S.pillars[1]}<br><span style="font-size:${fC}px;font-weight:900;">${S.objectives.filter(o=>o.pillar===1).length} obj · ${pillarRelCount(1)} rel</span></div>
+    <div style="position:absolute;right:2%;top:50%;transform:translateY(-50%);text-align:center;font-size:${fL}px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);letter-spacing:.04em;text-transform:uppercase;line-height:1.2;">${S.pillars[3]}<br><span style="font-size:${fC}px;font-weight:900;">${S.objectives.filter(o=>o.pillar===3).length} obj · ${pillarRelCount(3)} rel</span></div>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:${hub}px;height:${hub}px;border-radius:50%;background:rgba(20,5,2,0.85);border:1.5px solid rgba(255,255,255,0.22);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:${fC}px;font-weight:800;letter-spacing:.06em;color:rgba(255,200,180,0.8);text-align:center;line-height:1.3;">HOSHIN<br>KANRI<span style="font-size:${Math.round(fC*0.7)}px;opacity:.6;">X-Matrix</span></div>`;
+    return d;
+  }
+
+  let sideH=CARD_W;
+  for(let iter=0;iter<4;iter++){
+    const probeIter=document.createElement('div');
+    probeIter.style.cssText=`position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;z-index:9999;display:flex;gap:${GAP}px;font-family:system-ui,sans-serif;color:#fff;`;
+    const pi1=buildCard(1),pi3=buildCard(3);
+    pi1.style.width=sideH+'px';pi3.style.width=sideH+'px';
+    probeIter.appendChild(pi1);probeIter.appendChild(pi3);
+    document.body.appendChild(probeIter);
+    await new Promise(r=>setTimeout(r,80));
+    const newH=Math.max(pi1.getBoundingClientRect().height,pi3.getBoundingClientRect().height);
+    document.body.removeChild(probeIter);
+    if(Math.abs(newH-sideH)<2) break;
+    sideH=newH;
+  }
+
+  const probeL=document.createElement('div');
+  probeL.style.cssText=`position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;z-index:9999;display:flex;gap:${GAP}px;font-family:system-ui,sans-serif;color:#fff;`;
+  const pL=buildCard(1),pR=buildCard(3),pW=buildCard(4);
+  pL.style.width=sideH+'px';pR.style.width=sideH+'px';pW.style.width=sideH+'px';
+  probeL.appendChild(pL);probeL.appendChild(pR);probeL.appendChild(pW);
+  document.body.appendChild(probeL);
+  await new Promise(r=>setTimeout(r,80));
+  const h1=pL.getBoundingClientRect().height,h3=pR.getBoundingClientRect().height,h4=pW.getBoundingClientRect().height;
+  document.body.removeChild(probeL);
+  // Altura común para los 3 laterales = la del más alto
+  const sideMaxH=Math.max(h1,h3,h4);
+
+  const probeC=document.createElement('div');
+  probeC.style.cssText=`position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;z-index:9999;display:flex;gap:${GAP}px;font-family:system-ui,sans-serif;color:#fff;`;
+  const pT=buildCard(2),pB=buildCard(0);
+  pT.style.width=sideH+'px';pB.style.width=sideH+'px';
+  probeC.appendChild(pT);probeC.appendChild(pB);
+  document.body.appendChild(probeC);
+  await new Promise(r=>setTimeout(r,80));
+  const h2=pT.getBoundingClientRect().height,h0=pB.getBoundingClientRect().height;
+  document.body.removeChild(probeC);
+
+  const svgCenterY=h2+GAP+sideH/2;
+  const marginL=Math.max(0,Math.round(svgCenterY-sideMaxH/2));
+  const marginR=Math.max(0,Math.round(svgCenterY-sideMaxH/2));
+
+  const wrap=document.createElement('div');
+  wrap.style.cssText=`position:fixed;left:-9999px;top:0;background:linear-gradient(160deg,#000000 0%,#1a1a1a 45%,#333333 100%);padding:28px;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#fff;box-sizing:border-box;display:inline-block;`;
+
+  const whoObjs=S.objectives.filter(o=>Number(o.pillar)===4);
+  const totalCols=4;  // WHO siempre presente como 4ta columna
+  const titleW=sideH*totalCols+GAP*(totalCols-1);
+
+  const titleDiv=document.createElement('div');
+  titleDiv.style.cssText=`text-align:center;margin-bottom:24px;width:${titleW}px;`;
+  titleDiv.innerHTML=`<div style="font-size:22px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255, 255, 255,0.85);margin-bottom:8px;font-weight:600;">Strategic Planning</div><div style="font-size:58px;font-weight:900;letter-spacing:-.01em;line-height:1;background:linear-gradient(135deg,#030202 30%,#303030 75%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">HOSHIN KANRI X-MATRIX</div>`;
+  wrap.appendChild(titleDiv);
+
+  const mainRow=document.createElement('div');
+  mainRow.style.cssText=`display:flex;gap:${GAP}px;align-items:flex-start;`;
+
+  const cL=buildCard(1);cL.style.width=sideH+'px';cL.style.height=sideMaxH+'px';cL.style.marginTop=marginL+'px';mainRow.appendChild(cL);
+
+  const colC=document.createElement('div');
+  colC.style.cssText=`display:flex;flex-direction:column;gap:${GAP}px;flex-shrink:0;`;
+  const cTop=buildCard(2);cTop.style.width=sideH+'px';colC.appendChild(cTop);
+  colC.appendChild(buildCenter(sideH));
+  const cBot=buildCard(0);cBot.style.width=sideH+'px';colC.appendChild(cBot);
+  mainRow.appendChild(colC);
+
+  const cR=buildCard(3);cR.style.width=sideH+'px';cR.style.height=sideMaxH+'px';cR.style.marginTop=marginR+'px';mainRow.appendChild(cR);
+
+  const cWho=buildCard(4);cWho.style.width=sideH+'px';cWho.style.height=sideMaxH+'px';cWho.style.marginTop=marginR+'px';mainRow.appendChild(cWho);
+
+  wrap.appendChild(mainRow);
+  document.body.appendChild(wrap);
+  await new Promise(r=>setTimeout(r,150));
+  try{
+    const canvas=await html2canvas(wrap,{backgroundColor:'#000000',scale:3,useCORS:true,allowTaint:true,scrollX:0,scrollY:0,width:wrap.scrollWidth,height:wrap.scrollHeight});
+    const a=document.createElement('a');a.download='HoshinKanri.png';a.href=canvas.toDataURL('image/png');a.click();
+  }catch(err){alert('Export error: '+err.message);}
+  document.body.removeChild(wrap);
+}
+
+/* ════════════ MODAL HELPERS ════════════ */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open');}));
+document.getElementById('add-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveObjective();}});
+
+const dropArea=document.getElementById('drop-area');
+dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.classList.add('drag');});
+dropArea.addEventListener('dragleave',()=>dropArea.classList.remove('drag'));
+dropArea.addEventListener('drop',e=>{e.preventDefault();dropArea.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFileImport({target:{files:[f],value:''}});});
+
+/* ════════════ FONT SIZE ════════════ */
+let chipFontSize=11;
+function changeFontSize(d){
+  chipFontSize=Math.min(22,Math.max(8,chipFontSize+d));
+  document.getElementById('font-size-label').textContent=chipFontSize+'px';
+  document.documentElement.style.setProperty('--chip-font',chipFontSize+'px');
+  // los títulos de pilar crecen junto con los chips (un poco más grandes)
+  document.documentElement.style.setProperty('--head-font',(chipFontSize)+'px');
+  renderAll();
+}
+
+/* ════════════ INIT ════════════ */
+seed();renderAll();
+// Varios intentos para asegurar que .main ya tiene altura medible
+requestAnimationFrame(()=>requestAnimationFrame(()=>{applyPositions();}));
+window.addEventListener('load',()=>{applyPositions();});
+setTimeout(applyPositions,100);
+setTimeout(applyPositions,400);
+let _rz;window.addEventListener('resize',()=>{clearTimeout(_rz);_rz=setTimeout(applyPositions,150);});
+</script>
+</body>
+</html>
