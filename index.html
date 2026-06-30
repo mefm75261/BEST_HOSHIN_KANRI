@@ -49,25 +49,23 @@ body::after{
 .shell{
   position:relative;z-index:2;
   display:grid;
-  grid-template-columns:minmax(490px,300px) 1fr;
-  gap:2rem;
+  grid-template-columns:clamp(260px,28vw,490px) 1fr;  /* ← era minmax(490px,300px) */
+  gap:1.5rem;
   padding:2rem 1rem;
-  height:100vh;          /* exactamente el viewport, sin scroll */
+  height:100vh;
   overflow:hidden;
   align-items:stretch;
 }
 .aside{
-  overflow-y:auto;
-  overflow-x:hidden;
+  overflow-y:auto;overflow-x:hidden;
   display:flex;flex-direction:column;gap:.7rem;
-  scrollbar-width:thin;
-  scrollbar-color:rgba(255,255,255,0.15) transparent;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;
 }
 .main{min-width:0;display:flex;flex-direction:column;overflow:hidden;}
 
 /* HERO */
 .hero{text-align:left;}
-.hero-eyebrow{font-size:20px;letter-spacing:.25em;text-transform:uppercase;color:rgba(114, 120, 117);margin-bottom:.25rem;}
+.hero-eyebrow{font-size:20px;letter-spacing:.25em;text-transform:uppercase;color:rgba(114,120,117);margin-bottom:.25rem;}
 .hero-title{
   font-size:clamp(4rem,2.3vw,9.0rem);font-weight:900;letter-spacing:-.02em;line-height:1.02;
   background:linear-gradient(135deg,#fff 30%,#585e5e 70%,#585e5e 100%);
@@ -91,72 +89,51 @@ body::after{
 .tb-label{font-size:20px;letter-spacing:.12em;text-transform:uppercase;color:var(--text);width:100%;margin-bottom:-2px;}
 .rot-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:10px;background:rgba(0,0,0,0.3);font-size:10px;font-weight:700;padding:0 4px;margin-left:3px;}
 
-/* ── MATRIX LAYOUT ──
-   El tamaño del cuadrado lo calcula JS (sizeMatrix) para ser robusto.
-   matrix-section centra la fila vertical y horizontalmente.
-*/
+/* ── BOTÓN INSTRUCCIONES (esquina superior derecha) ── */
+/* ── BOTÓN INSTRUCCIONES (esquina inferior derecha) ── */
+.help-fab{
+  position:fixed;bottom:18px;right:18px;z-index:250;   /* ← bottom en vez de top */
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:calc(var(--chip-font,11px)*1.5);font-weight:700;padding:9px 16px;
+  border-radius:10px;border:1px solid rgba(152,237,206,0.5);
+  background:linear-gradient(135deg,rgba(30,64,52,0.92),rgba(19,38,31,0.92));
+  color:#cfeede;cursor:pointer;backdrop-filter:blur(8px);
+  box-shadow:0 4px 18px rgba(0,0,0,0.5);transition:transform .15s,border-color .15s;
+}
+.help-fab:hover{transform:translateY(-1px);border-color:rgba(152,237,206,0.9);}
+
+/* ── LOGO BEST (esquina superior derecha) ── */
+.brand-corner{
+  position:fixed;top:14px;right:18px;z-index:250;
+  width:80px;height:80px;object-fit:contain;border-radius:10px;
+  opacity:0.9;filter:drop-shadow(0 2px 10px rgba(0,0,0,0.7));
+  pointer-events:none;
+}
+
+/* ── MATRIX LAYOUT ── */
 .matrix-section{
-  flex:1 1 0;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:.3rem;
-  overflow:hidden;
+  flex:1 1 0;min-height:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.3rem;overflow:hidden;
 }
-
-/* matrix-row: fila centrada con el cuadrado + who-panel */
 .matrix-row{
-  display:flex;
-  flex-direction:row;
-  gap:6px;
-  align-items:flex-start;  /* permite que el margin-top del who-panel lo alinee con el brazo central */
-  /* width y height los fija JS via sizeMatrix() */
+  display:flex;flex-direction:row;gap:6px;align-items:flex-start;
 }
-
-/* rotator-wrap: cuadrado (lado fijado por JS) */
-.rotator-wrap{
-  flex:0 0 auto;
-  position:relative;
-  overflow:hidden;
-  /* width y height fijados por JS */
-}
-
-.rotator{
-  width:100%;height:100%;
-  transform-origin:center center;
-  will-change:transform;
-}
-
+.rotator-wrap{flex:0 0 auto;position:relative;overflow:hidden;}
+.rotator{width:100%;height:100%;transform-origin:center center;will-change:transform;}
 .cross{
   display:grid;
   grid-template-columns:1fr 1.15fr 1fr;
   grid-template-rows:1fr 1.15fr 1fr;
-  gap:6px;
-  width:100%;height:100%;
-  will-change:transform;
-  transform:translateZ(0);
-  backface-visibility:hidden;
-  -webkit-backface-visibility:hidden;
+  gap:6px;width:100%;height:100%;
+  will-change:transform;transform:translateZ(0);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
 }
-
-/* WHO PANEL — mismo alto que el cuadrado, ancho = brazo lateral (fijado por JS) */
 .who-panel{
-  flex:0 0 auto;
-  display:flex;flex-direction:column;
-  overflow:hidden;
-  border-radius:14px;
-  background:var(--p4bg);
-  border:1px solid var(--p4bd);
-  backdrop-filter:blur(8px);
-  /* width y height fijados por JS */
+  flex:0 0 auto;display:flex;flex-direction:column;overflow:hidden;
+  border-radius:14px;background:var(--p4bg);border:1px solid var(--p4bd);backdrop-filter:blur(8px);
 }
-.who-header{
-  padding:4px 8px 0;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  flex-shrink:0;
-}
+.who-header{padding:4px 8px 0;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;}
 .who-stats{font-size:9px;color:var(--muted);padding:2px 9px 4px;letter-spacing:.03em;}
 
 /* ARMS */
@@ -213,11 +190,7 @@ body::after{
 .h3 .qnum{background:var(--p3fill);} .h3{color:var(--p3c);}
 .h4{color:var(--p4c);}
 
-.arm-inner{
-  position:absolute;
-  display:flex;flex-direction:column;
-  transform-origin:center center;
-}
+.arm-inner{position:absolute;display:flex;flex-direction:column;transform-origin:center center;}
 .arm-head{flex:0 0 auto;}
 .arm-scroll{
   flex:1 1 auto;min-width:0;min-height:0;
@@ -261,8 +234,16 @@ body::after{
   position:relative !important;width:100% !important;height:auto !important;
   left:unset !important;top:unset !important;transform:none !important;
   display:flex;flex-direction:column;
+  min-height:0;        /* ← AGREGAR */
+  flex:1 1 auto;        /* ← AGREGAR */
+  overflow:hidden;      /* ← AGREGAR */
 }
-.arm.arm-expanded .arm-scroll{overflow-y:auto;max-height:calc(100vh - 120px);}
+.arm.arm-expanded .arm-scroll{
+  overflow-y:auto;
+  flex:1 1 auto;        /* ← AGREGAR, reemplaza max-height */
+  min-height:0;          /* ← AGREGAR, crítico para que flex no lo desborde */
+  max-height:none;       /* ← quitar el max-height fijo, ya no hace falta */
+}
 .arm-expand-bg{
   display:none;position:fixed;inset:0;z-index:199;
   background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);
@@ -277,7 +258,6 @@ body::after{
 /* VIEWS */
 .view{display:none;}
 .view.active{display:block;}
-/* La vista matrix activa debe llenar el alto del main para que sizeMatrix mida bien */
 #view-matrix.active{display:flex;flex-direction:column;flex:1 1 0;min-height:0;}
 
 /* CENTER */
@@ -286,13 +266,13 @@ body::after{
 .xtri{cursor:pointer;transition:opacity .15s,fill .55s cubic-bezier(.45,.05,.2,1),fill-opacity .55s;}
 .xtri:hover{opacity:.78;}
 .xtri-label{
-  position:absolute;font-size:8px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  position:absolute;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
   color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none;text-align:center;line-height:1.15;width:42%;
 }
 .xl-top  {top:12%;left:50%;transform:translateX(-50%);}
 .xl-bot  {bottom:12%;left:50%;transform:translateX(-50%) rotate(180deg);}
-.xl-left {left:0%;top:50%;transform:translateY(-50%) rotate(-90deg);}
-.xl-right{right:0%;top:50%;transform:translateY(-50%) rotate(90deg);}
+.xl-left {left:-2%;top:50%;transform:translateY(-50%) rotate(-90deg);}
+.xl-right{right:-2%;top:50%;transform:translateY(-50%) rotate(90deg);}
 .xl-count{display:block;font-size:9px;font-weight:900;margin-top:1px;}
 .xhub{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -354,6 +334,94 @@ body::after{
 .import-area:hover,.import-area.drag{border-color:rgba(152,237,206,0.6);background:rgba(255,255,255,0.05);}
 .import-area p{font-size:12px;color:var(--muted);margin-top:.3rem;}
 
+/* ════════════ MODAL INSTRUCCIONES ════════════ */
+.help-modal-bg{
+  display:none;position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,0.72);backdrop-filter:blur(5px);
+  align-items:center;justify-content:center;padding:2rem;
+}
+.help-modal-bg.open{display:flex;}
+.help-modal{
+  width:min(1100px,96vw);max-height:90vh;
+  background:linear-gradient(160deg,#16181a,#0f1011);
+  border:1px solid rgba(255,255,255,0.14);
+  border-radius:18px;box-shadow:0 24px 80px rgba(0,0,0,0.7);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.help-modal-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;
+}
+.help-modal-head h2{font-size:18px;font-weight:800;letter-spacing:.02em;color:#fff;}
+.help-modal-head .sub{font-size:12px;color:var(--hint);margin-top:2px;}
+.help-close{
+  width:34px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.06);color:#ddd;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .15s;
+}
+.help-close:hover{background:rgba(255,255,255,0.14);}
+.help-steps{
+  overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:16px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.18) transparent;
+}
+/* Cada paso: media a la izquierda, texto a la derecha */
+.help-step{
+  display:grid;grid-template-columns:340px 1fr;gap:18px;
+  border:1px solid rgba(255,255,255,0.13);border-radius:14px;
+  background:rgba(255,255,255,0.025);padding:14px;
+  transition:border-color .15s,background .15s;position:relative;
+}
+.help-step:hover{border-color:rgba(255,255,255,0.25);}
+.help-step-media{
+  border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;
+  background:rgba(0,0,0,0.4);aspect-ratio:16/10;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.help-step-media img{width:100%;height:100%;object-fit:contain;display:block;}
+.help-step-media .ph{font-size:12px;color:var(--hint);text-align:center;padding:1rem;line-height:1.5;}
+.help-step-body{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.help-step-num{
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.08em;color:#9fd9c2;
+}
+.help-step-num .n{
+  width:22px;height:22px;border-radius:50%;background:rgba(152,237,206,0.18);
+  border:1px solid rgba(152,237,206,0.5);display:inline-flex;align-items:center;justify-content:center;
+  font-size:11px;color:#bdeeda;
+}
+.help-step-title{font-size:15px;font-weight:700;color:#fff;}
+.help-step-text{
+  width:100%;min-height:90px;resize:vertical;
+  border:1px solid rgba(255,255,255,0.14);border-radius:9px;
+  background:rgba(0,0,0,0.35);color:#d6d9da;font-size:13px;line-height:1.55;
+  padding:9px 11px;font-family:inherit;outline:none;transition:border-color .15s;
+}
+.help-step-text:focus{border-color:rgba(152,237,206,0.55);}
+/* Botón ⤢ que aparece en hover sobre cada paso */
+.help-step-focus-btn{
+  position:absolute;top:10px;right:10px;
+  width:28px;height:28px;border-radius:8px;
+  border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);
+  color:#ccc;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;opacity:0;
+}
+.help-step:hover .help-step-focus-btn{opacity:1;}
+.help-step-focus-btn:hover{background:rgba(255,255,255,0.16);}
+/* Modo concentración: sólo el paso focused visible, a pantalla completa */
+.help-modal.focus-mode .help-step{display:none;}
+.help-modal.focus-mode .help-step.focused{
+  display:grid;grid-template-columns:1.3fr 1fr;gap:26px;
+  border:none;background:transparent;padding:4px;height:100%;
+}
+.help-modal.focus-mode .help-steps{padding:24px 30px;}
+.help-modal.focus-mode .help-step.focused .help-step-media{aspect-ratio:auto;height:100%;min-height:340px;}
+.help-modal.focus-mode .help-step.focused .help-step-text{min-height:240px;flex:1;}
+/* Nav de modo concentración (prev / next / salir) */
+.help-focus-nav{display:none;align-items:center;gap:10px;}
+.help-modal.focus-mode .help-focus-nav{display:flex;}
+.help-focus-nav .fcount{font-size:13px;color:var(--muted);min-width:60px;text-align:center;}
+
 /* RESPONSIVE */
 @media(max-width:860px){
   .shell{grid-template-columns:1fr;gap:.8rem;padding:.8rem;height:auto;overflow:visible;}
@@ -362,10 +430,12 @@ body::after{
   .matrix-section{overflow:visible;}
   .hero{text-align:center;}.hero-line{margin:.5rem auto 0;}
   .toolbar{justify-content:center;}
-  /* en móvil: apilado, JS no fija dimensiones (se ven via !important del media) */
   .matrix-row{flex-direction:column;width:100% !important;height:auto !important;}
   .rotator-wrap{width:100% !important;height:auto !important;aspect-ratio:1/1;}
   .who-panel{width:100% !important;height:auto !important;max-height:200px;}
+  /* help modal en móvil: columna única */
+  .help-step{grid-template-columns:1fr;}
+  .help-modal.focus-mode .help-step.focused{grid-template-columns:1fr;}
 }
 @media(max-width:520px){
   .cross{gap:4px;}.arm-head{font-size:10px;padding:4px 5px 3px;}
@@ -373,9 +443,44 @@ body::after{
   .xtri-label{font-size:7px;}.xl-count{font-size:8px;}
   .btn{font-size:11px;padding:5px 10px;}
 }
+/* ── RESPONSIVE INTERMEDIO (ventana achicada, no móvil) ── */
+@media(max-width:1150px){
+  .btn{font-size:17px;padding:5px 14px;}
+  .tb-label{font-size:16px;}
+  .ttl{font-size:40px;}
+  .sub{font-size:20px;}
+}
+@media(max-width:980px){
+  .btn{font-size:14px;padding:5px 10px;}
+  .tb-label{font-size:14px;}
+  .ttl{font-size:32px;}
+  .sub{font-size:16px;}
+  .hero-eyebrow{font-size:16px;}
+  .rot-badge{font-size:9px;}
+}
+/* ── RESPONSIVE MÓVIL (ya existía, sin cambios salvo el breakpoint) ── */
+@media(max-width:860px){
+  .shell{grid-template-columns:1fr;gap:.8rem;padding:.8rem;height:auto;overflow:visible;}
+  .aside{overflow:visible;}
+  .main{overflow:visible;}
+  .matrix-section{overflow:visible;}
+  .hero{text-align:center;}.hero-line{margin:.5rem auto 0;}
+  .toolbar{justify-content:center;}
+  .matrix-row{flex-direction:column;width:100% !important;height:auto !important;}
+  .rotator-wrap{width:100% !important;height:auto !important;aspect-ratio:1/1;}
+  .who-panel{width:100% !important;height:auto !important;max-height:200px;}
+  .help-step{grid-template-columns:1fr;}
+  .help-modal.focus-mode .help-step.focused{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
+
+<!-- ── LOGO BEST FIJO ── -->
+<img class="brand-corner" src="img/best-logo.png" alt="BEST" onerror="this.style.display='none'">
+
+<!-- ── BOTÓN INSTRUCCIONES FIJO ── -->
+<button class="help-fab" onclick="openHelp()">📖 Instructions</button>
 
 <div class="arm-expand-bg" id="arm-expand-bg" onclick="collapseArm()"></div>
 <div class="drag-hint" id="drag-hint">Drop onto another objective to create a link 🔗</div>
@@ -421,11 +526,7 @@ body::after{
     <!-- MATRIX VIEW -->
     <div class="view active" id="view-matrix">
       <div class="matrix-section">
-
-        <!-- flex row: [cuadrado rotatorio] + [who-panel estático] -->
         <div class="matrix-row">
-
-          <!-- ROTATOR WRAP: cuadrado, contiene el cross que gira -->
           <div class="rotator-wrap">
             <div class="rotator" id="rotator">
               <div class="cross" id="cross">
@@ -438,7 +539,7 @@ body::after{
                   </div>
                   <div class="arm a2" id="arm-2" style="width:100%;height:100%;">
                     <div class="arm-inner" id="inner-2">
-                      <div class="arm-head h2" onclick="setView('focus',2)"><span class="qnum">3</span><span id="hn2">How · Prioridades</span></div>
+                      <div class="arm-head h2" onclick="setView('focus',2)"><span class="qnum">3</span><span id="hn2">How · Priorities</span></div>
                       <div class="arm-scroll" id="qb-2"></div>
                     </div>
                   </div>
@@ -452,7 +553,7 @@ body::after{
                   </div>
                   <div class="arm a1" id="arm-1" style="width:100%;height:100%;">
                     <div class="arm-inner" id="inner-1">
-                      <div class="arm-head h1" onclick="setView('focus',1)"><span class="qnum">2</span><span id="hn1">How far · Anuales</span></div>
+                      <div class="arm-head h1" onclick="setView('focus',1)"><span class="qnum">2</span><span id="hn1">How far · Year</span></div>
                       <div class="arm-scroll" id="qb-1"></div>
                     </div>
                   </div>
@@ -499,7 +600,7 @@ body::after{
                   </div>
                   <div class="arm a0" id="arm-0" style="width:100%;height:100%;">
                     <div class="arm-inner" id="inner-0">
-                      <div class="arm-head h0" onclick="setView('focus',0)"><span class="qnum">1</span><span id="hn0">What · Largo plazo</span></div>
+                      <div class="arm-head h0" onclick="setView('focus',0)"><span class="qnum">1</span><span id="hn0">What · Long time</span></div>
                       <div class="arm-scroll" id="qb-0"></div>
                     </div>
                   </div>
@@ -509,26 +610,20 @@ body::after{
             </div><!-- /rotator -->
           </div><!-- /rotator-wrap -->
 
-          <!-- WHO PANEL — hermano del rotator-wrap, NO gira -->
+          <!-- WHO PANEL -->
           <div class="who-panel" id="who-panel" style="position:relative;">
-
-          <!-- Botón anclado arriba-derecha, independiente del contenido -->
-          <button class="ctrl-btn" id="expand-btn-who" onclick="expandWho()"
-            style="position:absolute; top:8px; right:8px; z-index:20;">⤢</button>
-
+            <button class="ctrl-btn" id="expand-btn-who" onclick="expandWho()"
+              style="position:absolute;top:8px;right:8px;z-index:20;">⤢</button>
             <div class="who-header">
-            <!-- ya sin el botón aquí -->
-            <div style="display:flex;align-items:center;justify-content:space-between;padding-right:5px;">
-              <div class="arm-head h4" onclick="setView('focus',4)" style="padding:6px 6px 4px;">
-              <span class="qnum" style="background:var(--p4fill);color:#1a0503;">5</span>
-              <span id="hn4">Who · Responsables</span>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-right:5px;">
+                <div class="arm-head h4" onclick="setView('focus',4)" style="padding:6px 6px 4px;">
+                  <span class="qnum" style="background:var(--p4fill);color:#1a0503;">5</span>
+                  <span id="hn4">Who · Responsables</span>
+                </div>
               </div>
-            </div>
               <div class="who-stats" id="who-stats"></div>
-              </div>
-
+            </div>
             <div class="arm-scroll" id="qb-4"></div>
-
           </div><!-- /who-panel -->
 
         </div><!-- /matrix-row -->
@@ -605,10 +700,33 @@ body::after{
   </div>
 </div></div>
 
+<!-- ════════════ MODAL INSTRUCCIONES ════════════ -->
+<div class="help-modal-bg" id="help-modal-bg">
+  <div class="help-modal" id="help-modal">
+    <div class="help-modal-head">
+      <div>
+        <h2>How to use the X-Matrix</h2>
+        <div class="sub">Step-by-step guide · edit the description text on each step</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <!-- Nav visible solo en modo concentración -->
+        <div class="help-focus-nav">
+          <button class="btn" style="font-size:13px;padding:6px 12px;" onclick="helpFocusPrev()">←</button>
+          <span class="fcount" id="help-fcount">1 / 7</span>
+          <button class="btn" style="font-size:13px;padding:6px 12px;" onclick="helpFocusNext()">→</button>
+          <button class="btn" style="font-size:13px;padding:6px 12px;" onclick="exitHelpFocus()">⤢ Exit focus</button>
+        </div>
+        <button class="help-close" onclick="closeHelp()">✕</button>
+      </div>
+    </div>
+    <div class="help-steps" id="help-steps"><!-- steps built by JS --></div>
+  </div>
+</div>
+
 <script>
 /* ════════════ STATE ════════════ */
 const S={
-  pillars:['What · Largo plazo','How far · Anuales','How · Prioridades','How much · Targets','Who · Responsables'],
+  pillars:['What · Largo plazo','How far · Yearly','How · Priorities','How much · Targets','Who · Responsables'],
   objectives:[],links:{},nextId:1
 };
 const PCOLS=['var(--p0c)','var(--p1c)','var(--p2c)','var(--p3c)','var(--p4c)'];
@@ -781,7 +899,6 @@ function rotateNext(){
   cross.style.transition='transform .55s cubic-bezier(.4,0,.2,1)';
   cross.style.transform=`translateZ(0) rotate(${wheelDeg}deg)`;
   document.getElementById('rot-label').textContent=ROT_LABELS[currentRot];
-  // contra-rotar el hub para que el texto quede siempre derecho
   const hub=document.querySelector('.xhub');
   if(hub) hub.style.transform=`translate(-50%,-50%) rotate(${-wheelDeg}deg)`;
   setTimeout(()=>[0,1,2,3].forEach(setArmDimensions),600);
@@ -804,60 +921,42 @@ function setArmDimensions(pillar){
   inner.style.transform=`translate(-50%,-50%) rotate(${total}deg)`;
 }
 
-/* ════════════ SIZE MATRIX (JS-driven) ════════════
-   Calcula el lado del cuadrado para que quepa en el .main disponible,
-   reservando espacio horizontal para el who-panel.
-   Proporción del who-panel = ancho de un brazo lateral del cross.
-   Cross grid = 1 : 1.15 : 1 (cols) → brazo lateral = 1/3.15 ≈ 0.317 del lado.
-*/
-const WHO_RATIO = 1/3.15;   // ancho del who-panel relativo al lado del cuadrado
-const ROW_GAP   = 6;        // gap entre cuadrado y who-panel
+/* ════════════ SIZE MATRIX ════════════ */
+const WHO_RATIO=1/3.15;
+const ROW_GAP=6;
 
 function sizeMatrix(){
-  const main    = document.querySelector('.main');
-  const section = document.querySelector('.matrix-section');
-  const row     = document.querySelector('.matrix-row');
-  const wrap    = document.querySelector('.rotator-wrap');
-  const who     = document.getElementById('who-panel');
-  if(!main || !section || !row || !wrap || !who) return;
-  if(currentView !== 'matrix') return;
-  // En móvil el CSS (media query) controla el layout apilado; no fijamos px.
-  if(window.innerWidth <= 860){
-    row.style.width=''; row.style.height='';
-    wrap.style.width=''; wrap.style.height='';
-    who.style.width=''; who.style.height=''; who.style.marginTop='';
+  const main=document.querySelector('.main');
+  const section=document.querySelector('.matrix-section');
+  const row=document.querySelector('.matrix-row');
+  const wrap=document.querySelector('.rotator-wrap');
+  const who=document.getElementById('who-panel');
+  if(!main||!section||!row||!wrap||!who)return;
+  if(currentView!=='matrix')return;
+  if(window.innerWidth<=860){
+    row.style.width='';row.style.height='';
+    wrap.style.width='';wrap.style.height='';
+    who.style.width='';who.style.height='';who.style.marginTop='';
     return;
   }
-
-  // Medir desde .main (tiene alto real = viewport menos padding del shell)
-  const availH = main.clientHeight - 30;  // reserva para el <p> de ayuda
-  const availW = main.clientWidth;
-
-  // El conjunto ocupa: lado*(1+WHO_RATIO)+gap de ancho, y "lado" de alto.
-  const sideByH = availH;
-  const sideByW = (availW - ROW_GAP) / (1 + WHO_RATIO);
-  let side = Math.floor(Math.min(sideByH, sideByW));
-  side = Math.max(side, 320); // mínimo razonable
-
-  const whoW = Math.round(side * WHO_RATIO);
-
-  wrap.style.width  = side + 'px';
-  wrap.style.height = side + 'px';
-
-  /* El panel WHO debe imitar al brazo lateral (rojo/derecho):
-     - altura = fila central del grid = 1.15/3.15 del lado
-     - posición vertical = empieza después de la fila superior (1/3.15 + gap)
-     Usamos margin-top para empujarlo a la altura del brazo rojo. */
-  const unit      = (side - 2*ROW_GAP) / 3.15;  // 1fr en px
-const armHeight = unit * 1.15;                 // alto exacto del brazo central
-const armTop    = unit + ROW_GAP;              // empieza tras la fila superior + gap
-
-  who.style.width     = whoW + 'px';
-  who.style.height    = Math.round(armHeight) + 'px';
-  who.style.marginTop = Math.round(armTop) + 'px';
-
-  row.style.width   = (side + ROW_GAP + whoW) + 'px';
-  row.style.height  = side + 'px';
+  const availH=main.clientHeight-30;
+  const availW=main.clientWidth;
+  if(availW<100)return;   // ← NUEVO: evita cálculos con main colapsado
+  const sideByH=availH;
+  const sideByW=(availW-ROW_GAP)/(1+WHO_RATIO);
+  let side=Math.floor(Math.min(sideByH,sideByW));
+  side=Math.max(side,240);   // ← era 320, baja a 240 para ventanas más angostas
+  // ... resto igual
+  const whoW=Math.round(side*WHO_RATIO);
+  wrap.style.width=side+'px';wrap.style.height=side+'px';
+  const unit=(side-2*ROW_GAP)/3.15;
+  const armHeight=unit*1.15;
+  const armTop=unit+ROW_GAP;
+  who.style.width=whoW+'px';
+  who.style.height=Math.round(armHeight)+'px';
+  who.style.marginTop=Math.round(armTop)+'px';
+  row.style.width=(side+ROW_GAP+whoW)+'px';
+  row.style.height=side+'px';
 }
 
 function applyPositions(){
@@ -912,7 +1011,6 @@ function collapseWho(){
   document.getElementById('arm-expand-bg').style.display='none';
   document.getElementById('arm-expand-bg').onclick=collapseArm;
   btn.textContent='⤢';btn.onclick=expandWho;
-  // Recalcular dimensiones y posición del panel WHO
   requestAnimationFrame(()=>requestAnimationFrame(sizeMatrix));
 }
 
@@ -930,7 +1028,14 @@ function collapseArm(){
   expandedArmPillar=null;
   requestAnimationFrame(()=>requestAnimationFrame(()=>setArmDimensions(p)));
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape')collapseArm();});
+
+/* Escape cierra help modal primero, luego los arms */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(document.getElementById('help-modal-bg').classList.contains('open')){closeHelp();return;}
+    collapseArm();
+  }
+});
 
 function focusPrev(){currentFocus=(currentFocus+4)%5;selectedObjId=null;renderFocusView();}
 function focusNext(){currentFocus=(currentFocus+1)%5;selectedObjId=null;renderFocusView();}
@@ -954,16 +1059,12 @@ function delObj(e,id){
   for(const k in S.links)S.links[k]=S.links[k].filter(x=>x!==id);
   if(selectedObjId===id)selectedObjId=null;renderAll();
 }
-
 function editObj(e,id){
   e.stopPropagation();
   const obj=S.objectives.find(o=>o.id===id);
   if(!obj)return;
   const nuevo=prompt('Edit objective:',obj.text);
-  if(nuevo!==null&&nuevo.trim()){
-    obj.text=nuevo.trim();
-    renderAll();
-  }
+  if(nuevo!==null&&nuevo.trim()){obj.text=nuevo.trim();renderAll();}
 }
 
 /* ════════════ PILLARS MODAL ════════════ */
@@ -1051,7 +1152,7 @@ function downloadTemplate(){
 
 /* ════════════ EXPORT IMAGE ════════════ */
 async function exportImage(){
-  const CARD_W=320, GAP=16;
+  const CARD_W=320,GAP=16;
   const COLORS=['#4fc3f7','#ffd54f','#66bb6a','#ef5350','#b0bec5'];
   const BKGS=['rgba(79,195,247,0.16)','rgba(255,213,79,0.16)','rgba(102,187,106,0.16)','rgba(239,83,80,0.16)','rgba(240,245,250,0.12)'];
   const BORDS=['rgba(79,195,247,0.5)','rgba(255,213,79,0.5)','rgba(102,187,106,0.5)','rgba(239,83,80,0.5)','rgba(176,190,197,0.5)'];
@@ -1061,35 +1162,26 @@ async function exportImage(){
     const objs=S.objectives.filter(o=>Number(o.pillar)===pillarIdx);
     const card=document.createElement('div');
     card.style.cssText=`background:${BKGS[pillarIdx]};border:1px solid ${BORDS[pillarIdx]};border-radius:14px;padding:12px;width:${CARD_W}px;box-sizing:border-box;flex-shrink:0;`;
-    const hdr=document.createElement('div');
-    hdr.style.cssText='display:flex;align-items:center;gap:7px;margin-bottom:10px;';
-    const qn=document.createElement('span');
-    qn.style.cssText=`width:22px;height:22px;border-radius:50%;background:${FILLS[pillarIdx]};display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#1a0503;flex-shrink:0;`;
-    qn.textContent=pillarIdx+1;
-    const tl=document.createElement('span');
-    tl.style.cssText=`font-size:14px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:${COLORS[pillarIdx]};`;
-    tl.textContent=S.pillars[pillarIdx];
+    const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:7px;margin-bottom:10px;';
+    const qn=document.createElement('span');qn.style.cssText=`width:22px;height:22px;border-radius:50%;background:${FILLS[pillarIdx]};display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#1a0503;flex-shrink:0;`;qn.textContent=pillarIdx+1;
+    const tl=document.createElement('span');tl.style.cssText=`font-size:14px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:${COLORS[pillarIdx]};`;tl.textContent=S.pillars[pillarIdx];
     hdr.appendChild(qn);hdr.appendChild(tl);card.appendChild(hdr);
     objs.forEach(obj=>{
-      const chip=document.createElement('div');
-      chip.style.cssText=`padding:5px 8px;border-radius:7px;font-size:${chipFontSize}px;line-height:1.4;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.12);margin-bottom:4px;display:flex;justify-content:space-between;align-items:flex-start;`;
+      const chip=document.createElement('div');chip.style.cssText=`padding:5px 8px;border-radius:7px;font-size:${chipFontSize}px;line-height:1.4;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.12);margin-bottom:4px;display:flex;justify-content:space-between;align-items:flex-start;`;
       const tx=document.createElement('span');tx.style.cssText='flex:1;word-break:break-word;color:#fff;';tx.textContent=obj.text;
       const bg=document.createElement('span');bg.style.cssText='font-size:9px;color:rgba(255,255,255,0.55);white-space:nowrap;margin-left:5px;flex-shrink:0;';bg.textContent=`🔗${(S.links[obj.id]||[]).length}`;
       chip.appendChild(tx);chip.appendChild(bg);card.appendChild(chip);
     });
-    const ft=document.createElement('div');ft.style.cssText='font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;';
-    ft.textContent=`${objs.length} ${pillarIdx===4?'responsables':'objectives'} · ${pillarRelCount(pillarIdx)} relations`;
-    card.appendChild(ft);
+    const ft=document.createElement('div');ft.style.cssText='font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;';ft.textContent=`${objs.length} ${pillarIdx===4?'responsables':'objectives'} · ${pillarRelCount(pillarIdx)} relations`;card.appendChild(ft);
     return card;
   }
 
   function buildCenter(size){
     const F=['#29b6f6','#ffca28','#43a047','#e53935'];
-    const d=document.createElement('div');
-    d.style.cssText=`width:${size}px;height:${size}px;position:relative;border-radius:14px;overflow:hidden;flex-shrink:0;`;
-    const fL=Math.max(7,Math.round(size*0.022));   // tamaño nombre pilar
-    const fC=Math.max(8,Math.round(size*0.026));   // tamaño contador obj·rel
-    const hub=Math.max(56,Math.round(size*0.18));  // tamaño del hub central
+    const d=document.createElement('div');d.style.cssText=`width:${size}px;height:${size}px;position:relative;border-radius:14px;overflow:hidden;flex-shrink:0;`;
+    const fL=Math.max(7,Math.round(size*0.022));
+    const fC=Math.max(8,Math.round(size*0.026));
+    const hub=Math.max(56,Math.round(size*0.18));
     d.innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;">
       <polygon points="0,0 100,0 50,50" fill="${F[2]}" fill-opacity="0.55"/>
       <polygon points="100,0 100,100 50,50" fill="${F[3]}" fill-opacity="0.55"/>
@@ -1130,7 +1222,6 @@ async function exportImage(){
   await new Promise(r=>setTimeout(r,80));
   const h1=pL.getBoundingClientRect().height,h3=pR.getBoundingClientRect().height,h4=pW.getBoundingClientRect().height;
   document.body.removeChild(probeL);
-  // Altura común para los 3 laterales = la del más alto
   const sideMaxH=Math.max(h1,h3,h4);
 
   const probeC=document.createElement('div');
@@ -1151,32 +1242,26 @@ async function exportImage(){
   wrap.style.cssText=`position:fixed;left:-9999px;top:0;background:linear-gradient(160deg,#000000 0%,#1a1a1a 45%,#333333 100%);padding:28px;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#fff;box-sizing:border-box;display:inline-block;`;
 
   const whoObjs=S.objectives.filter(o=>Number(o.pillar)===4);
-  const totalCols=4;  // WHO siempre presente como 4ta columna
+  const totalCols=4;
   const titleW=sideH*totalCols+GAP*(totalCols-1);
 
   const titleDiv=document.createElement('div');
   titleDiv.style.cssText=`text-align:center;margin-bottom:24px;width:${titleW}px;`;
-  titleDiv.innerHTML=`<div style="font-size:22px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255, 255, 255,0.85);margin-bottom:8px;font-weight:600;">Strategic Planning</div><div style="font-size:58px;font-weight:900;letter-spacing:-.01em;line-height:1;background:linear-gradient(135deg,#030202 30%,#303030 75%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">HOSHIN KANRI X-MATRIX</div>`;
+  titleDiv.innerHTML=`<div style="font-size:22px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,0.85);margin-bottom:8px;font-weight:600;">Strategic Planning</div><div style="font-size:58px;font-weight:900;letter-spacing:-.01em;line-height:1;background:linear-gradient(135deg,#030202 30%,#303030 75%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">HOSHIN KANRI X-MATRIX</div>`;
   wrap.appendChild(titleDiv);
 
-  const mainRow=document.createElement('div');
-  mainRow.style.cssText=`display:flex;gap:${GAP}px;align-items:flex-start;`;
+  const mainRow=document.createElement('div');mainRow.style.cssText=`display:flex;gap:${GAP}px;align-items:flex-start;`;
 
   const cL=buildCard(1);cL.style.width=sideH+'px';cL.style.height=sideMaxH+'px';cL.style.marginTop=marginL+'px';mainRow.appendChild(cL);
-
-  const colC=document.createElement('div');
-  colC.style.cssText=`display:flex;flex-direction:column;gap:${GAP}px;flex-shrink:0;`;
+  const colC=document.createElement('div');colC.style.cssText=`display:flex;flex-direction:column;gap:${GAP}px;flex-shrink:0;`;
   const cTop=buildCard(2);cTop.style.width=sideH+'px';colC.appendChild(cTop);
   colC.appendChild(buildCenter(sideH));
   const cBot=buildCard(0);cBot.style.width=sideH+'px';colC.appendChild(cBot);
   mainRow.appendChild(colC);
-
   const cR=buildCard(3);cR.style.width=sideH+'px';cR.style.height=sideMaxH+'px';cR.style.marginTop=marginR+'px';mainRow.appendChild(cR);
-
   const cWho=buildCard(4);cWho.style.width=sideH+'px';cWho.style.height=sideMaxH+'px';cWho.style.marginTop=marginR+'px';mainRow.appendChild(cWho);
 
-  wrap.appendChild(mainRow);
-  document.body.appendChild(wrap);
+  wrap.appendChild(mainRow);document.body.appendChild(wrap);
   await new Promise(r=>setTimeout(r,150));
   try{
     const canvas=await html2canvas(wrap,{backgroundColor:'#000000',scale:3,useCORS:true,allowTaint:true,scrollX:0,scrollY:0,width:wrap.scrollWidth,height:wrap.scrollHeight});
@@ -1196,20 +1281,128 @@ dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.classList.a
 dropArea.addEventListener('dragleave',()=>dropArea.classList.remove('drag'));
 dropArea.addEventListener('drop',e=>{e.preventDefault();dropArea.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFileImport({target:{files:[f],value:''}});});
 
+/* ════════════ INSTRUCTIONS MODAL ════════════
+   7 steps. Put your GIFs at img/paso1.gif … img/paso7.gif
+   Texts are editable inline and persist in localStorage.
+*/
+const HELP_STEPS=[
+  {gif:'gifs/paso1.gif', title:'Add an objective',    text:'Welcome to HOSHIN KANRI MAKER by BEST PROGRAM , to start Click "+ Objective" or the "+ Add" button inside any pillar to create a new objective. Choose the pillar and write the description.'},
+  {gif:'gifs/paso2.gif', title:'Link objectives',     text:'Drag one objective card onto another to create a relationship between them. The 🔗 badge shows how many links each objective has, you can Click in relationships option to see those or make new or Click a pillar header or the "Pillar" view to open a focused list. Select an objective there to link it to objectives from other pillars.'},
+  {gif:'gifs/paso3.gif', title:'Edit Pillars and Import Data',   text:'Click in Pillars option to edit a pilar name or you can export excel to see how introduce the format on excel an then import to see all your work in the matrix.'},
+  {gif:'gifs/paso4.gif', title:'Export Formats',   text:'You can export the data in 3 different formats, excel as you saw in the previous step, CSV to work like text and ass image to use that whatever you want, the image is in FULL HD'},
+  {gif:'gifs/paso5.gif', title:'Rotate the matrix',       text:'The main appeal of the grid is that you can click the "Rotate°" option to spin the whole cross to get a better view, the central HOSHIN KANRI hub stays upright so the title is always readable.'},
+  {gif:'gifs/paso6.gif', title:'Rotate Pillars',     text:'All pillars have the option to rotate them independently and also the option to expand the view of each one to get a better view of them.'},
+  {gif:'gifs/paso7.gif', title:'Adjustable Size',  text:'The matrix has the option to adjust the font size, which increases all the text in the pillars, as well as the header, buttons, and objectives.'},
+];
+const HELP_TEXT_KEY='hk-help-text';
+let helpFocusIndex=-1;
+
+function loadHelpTexts(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(HELP_TEXT_KEY)||'{}');
+    HELP_STEPS.forEach((s,i)=>{if(saved[i]!=null)s.text=saved[i];});
+  }catch(e){}
+}
+function saveHelpText(i,val){
+  HELP_STEPS[i].text=val;
+  try{
+    const saved=JSON.parse(localStorage.getItem(HELP_TEXT_KEY)||'{}');
+    saved[i]=val;localStorage.setItem(HELP_TEXT_KEY,JSON.stringify(saved));
+  }catch(e){}
+}
+function buildHelpSteps(){
+  const cont=document.getElementById('help-steps');cont.innerHTML='';
+  HELP_STEPS.forEach((s,i)=>{
+    const step=document.createElement('div');
+    step.className='help-step';step.dataset.idx=i;
+
+    const media=document.createElement('div');media.className='help-step-media';
+    const img=document.createElement('img');img.src=s.gif;img.alt='Step '+(i+1);
+    img.onerror=function(){media.innerHTML='<div class="ph">GIF · Step '+(i+1)+'<br><span style="opacity:.6">place it at<br>'+s.gif+'</span></div>';};
+    media.appendChild(img);
+
+    const body=document.createElement('div');body.className='help-step-body';
+    body.innerHTML=`<div class="help-step-num"><span class="n">${i+1}</span> Step ${i+1}</div>
+      <div class="help-step-title">${s.title}</div>`;
+    const ta=document.createElement('textarea');ta.className='help-step-text';ta.value=s.text;
+    ta.addEventListener('input',()=>saveHelpText(i,ta.value));
+    body.appendChild(ta);
+
+    /* ⤢ focus button shown on hover */
+    const fbtn=document.createElement('button');
+    fbtn.className='help-step-focus-btn';fbtn.title='Focus this step';fbtn.textContent='⤢';
+    fbtn.onclick=()=>enterHelpFocus(i);
+
+    step.appendChild(fbtn);
+    step.appendChild(media);
+    step.appendChild(body);
+    cont.appendChild(step);
+  });
+}
+
+function openHelp(){buildHelpSteps();document.getElementById('help-modal-bg').classList.add('open');}
+function closeHelp(){exitHelpFocus();document.getElementById('help-modal-bg').classList.remove('open');}
+document.getElementById('help-modal-bg').addEventListener('click',e=>{if(e.target.id==='help-modal-bg')closeHelp();});
+
+function enterHelpFocus(i){
+  helpFocusIndex=i;
+  document.getElementById('help-modal').classList.add('focus-mode');
+  document.querySelectorAll('.help-step').forEach(st=>st.classList.toggle('focused',Number(st.dataset.idx)===i));
+  document.getElementById('help-fcount').textContent=(i+1)+' / '+HELP_STEPS.length;
+}
+function exitHelpFocus(){
+  helpFocusIndex=-1;
+  document.getElementById('help-modal').classList.remove('focus-mode');
+  document.querySelectorAll('.help-step').forEach(st=>st.classList.remove('focused'));
+}
+function helpFocusPrev(){if(helpFocusIndex<0)return;enterHelpFocus((helpFocusIndex-1+HELP_STEPS.length)%HELP_STEPS.length);}
+function helpFocusNext(){if(helpFocusIndex<0)return;enterHelpFocus((helpFocusIndex+1)%HELP_STEPS.length);}
+
 /* ════════════ FONT SIZE ════════════ */
 let chipFontSize=11;
 function changeFontSize(d){
   chipFontSize=Math.min(22,Math.max(8,chipFontSize+d));
   document.getElementById('font-size-label').textContent=chipFontSize+'px';
   document.documentElement.style.setProperty('--chip-font',chipFontSize+'px');
-  // los títulos de pilar crecen junto con los chips (un poco más grandes)
-  document.documentElement.style.setProperty('--head-font',(chipFontSize)+'px');
+  document.documentElement.style.setProperty('--head-font',chipFontSize+'px');
   renderAll();
+  requestAnimationFrame(()=>requestAnimationFrame(fixExpandedScroll)); // ← doble rAF asegura que el DOM ya pintó
+}
+
+function fixExpandedScroll(){
+  if(expandedArmPillar===null)return;
+  const p=expandedArmPillar;
+  const arm=document.getElementById('arm-'+p);
+  const inner=document.getElementById('inner-'+p);
+  if(!arm||!inner)return;
+
+  // Aseguramos que el inner no quede con un height fijo viejo
+  inner.style.height='auto';
+
+  // Forzamos al navegador a re-medir el alto disponible del arm
+  // recalculando el tamaño expandido igual que en expandArm()
+  const tW=Math.min(460,window.innerWidth-40);
+  const tH=Math.min(560,window.innerHeight-80);
+  arm.style.width=tW+'px';
+  arm.style.height=tH+'px';
+  arm.style.left=((window.innerWidth-tW)/2)+'px';
+  arm.style.top=((window.innerHeight-tH)/2)+'px';
+
+  // Forzar reflow y luego dejar que arm-scroll recalcule su scrollHeight
+  requestAnimationFrame(()=>{
+    const scrollEl=document.getElementById('qb-'+p);
+    if(scrollEl){
+      // truco para forzar al navegador a recalcular scrollHeight
+      scrollEl.style.overflowY='hidden';
+      void scrollEl.offsetHeight; // reflow forzado
+      scrollEl.style.overflowY='auto';
+    }
+  });
 }
 
 /* ════════════ INIT ════════════ */
+loadHelpTexts();   /* ← carga textos guardados antes del primer render */
 seed();renderAll();
-// Varios intentos para asegurar que .main ya tiene altura medible
 requestAnimationFrame(()=>requestAnimationFrame(()=>{applyPositions();}));
 window.addEventListener('load',()=>{applyPositions();});
 setTimeout(applyPositions,100);
